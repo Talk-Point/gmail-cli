@@ -1,0 +1,615 @@
+"""Gmail API wrapper service."""
+
+import base64
+import mimetypes
+import time
+from datetime import UTC, datetime
+from email.message import EmailMessage
+from email.utils import parsedate_to_datetime
+from pathlib import Path
+
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+from gmail_cli.models.attachment import Attachment
+from gmail_cli.models.email import Email
+from gmail_cli.models.search import SearchResult
+from gmail_cli.services.auth import get_credentials
+
+# Rate limiting settings
+MAX_RETRIES = 3
+BASE_DELAY = 1  # seconds
+
+
+def get_gmail_service():
+    """Get an authenticated Gmail API service.
+
+    Returns:
+        Gmail API service object.
+
+    Raises:
+        Exception: If not authenticated.
+    """
+    credentials = get_credentials()
+    if not credentials:
+        raise Exception("Not authenticated. Run 'gmail auth login' first.")
+
+    return build("gmail", "v1", credentials=credentials)
+
+
+def _execute_with_retry(request):
+    """Execute an API request with exponential backoff retry.
+
+    Args:
+        request: The API request to execute.
+
+    Returns:
+        The API response.
+
+    Raises:
+        HttpError: If all retries fail.
+    """
+    for attempt in range(MAX_RETRIES):
+        try:
+            return request.execute()
+        except HttpError as e:
+            if e.resp.status == 429:  # Rate limited
+                delay = BASE_DELAY * (2**attempt)
+                time.sleep(delay)
+            else:
+                raise
+    # Final attempt
+    return request.execute()
+
+
+def build_search_query(
+    query: str = "",
+    from_addr: str | None = None,
+    to_addr: str | None = None,
+    subject: str | None = None,
+    label: str | None = None,
+    after: str | None = None,
+    before: str | None = None,
+    has_attachment: bool = False,
+) -> str:
+    """Build a Gmail search query string.
+
+    Args:
+        query: Base search query.
+        from_addr: Filter by sender.
+        to_addr: Filter by recipient.
+        subject: Filter by subject.
+        label: Filter by label.
+        after: Filter emails after date (YYYY-MM-DD).
+        before: Filter emails before date (YYYY-MM-DD).
+        has_attachment: Filter emails with attachments.
+
+    Returns:
+        Combined Gmail search query string.
+    """
+    parts = []
+
+    if query:
+        parts.append(query)
+    if from_addr:
+        parts.append(f"from:{from_addr}")
+    if to_addr:
+        parts.append(f"to:{to_addr}")
+    if subject:
+        parts.append(f"subject:{subject}")
+    if label:
+        parts.append(f"label:{label}")
+    if after:
+        parts.append(f"after:{after}")
+    if before:
+        parts.append(f"before:{before}")
+    if has_attachment:
+        parts.append("has:attachment")
+
+    return " ".join(parts)
+
+
+def search_emails(
+    query: str = "",
+    from_addr: str | None = None,
+    to_addr: str | None = None,
+    subject: str | None = None,
+    label: str | None = None,
+    after: str | None = None,
+    before: str | None = None,
+    has_attachment: bool = False,
+    limit: int = 20,
+    page_token: str | None = None,
+) -> SearchResult:
+    """Search emails with filters and pagination.
+
+    Args:
+        query: Search query string.
+        from_addr: Filter by sender.
+        to_addr: Filter by recipient.
+        subject: Filter by subject.
+        label: Filter by label.
+        after: Filter emails after date.
+        before: Filter emails before date.
+        has_attachment: Filter emails with attachments.
+        limit: Maximum number of results.
+        page_token: Token for pagination.
+
+    Returns:
+        SearchResult with matching emails.
+    """
+    service = get_gmail_service()
+
+    full_query = build_search_query(
+        query=query,
+        from_addr=from_addr,
+        to_addr=to_addr,
+        subject=subject,
+        label=label,
+        after=after,
+        before=before,
+        has_attachment=has_attachment,
+    )
+
+    # Get message list
+    request = (
+        service.users()
+        .messages()
+        .list(
+            userId="me",
+            q=full_query,
+            maxResults=limit,
+            pageToken=page_token,
+        )
+    )
+    response = _execute_with_retry(request)
+
+    messages = response.get("messages", [])
+    next_page_token = response.get("nextPageToken")
+    total_estimate = response.get("resultSizeEstimate", 0)
+
+    # Fetch message details for each result
+    emails = []
+    for msg in messages:
+        email = get_email_summary(msg["id"])
+        if email:
+            emails.append(email)
+
+    return SearchResult(
+        emails=emails,
+        total_estimate=total_estimate,
+        next_page_token=next_page_token,
+        query=full_query,
+    )
+
+
+def get_email_summary(message_id: str) -> Email | None:
+    """Get email summary (metadata only, not full body).
+
+    Args:
+        message_id: Gmail message ID.
+
+    Returns:
+        Email with metadata, or None if not found.
+    """
+    service = get_gmail_service()
+
+    try:
+        request = (
+            service.users()
+            .messages()
+            .get(
+                userId="me",
+                id=message_id,
+                format="metadata",
+                metadataHeaders=["From", "To", "Subject", "Date"],
+            )
+        )
+        msg = _execute_with_retry(request)
+    except HttpError as e:
+        if e.resp.status == 404:
+            return None
+        raise
+
+    headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+
+    # Parse date
+    date_str = headers.get("Date", "")
+    try:
+        date = parsedate_to_datetime(date_str)
+    except Exception:
+        # Fallback to internalDate
+        internal_date = int(msg.get("internalDate", 0))
+        date = datetime.fromtimestamp(internal_date / 1000, tz=UTC)
+
+    return Email(
+        id=msg["id"],
+        thread_id=msg["threadId"],
+        subject=headers.get("Subject", "(kein Betreff)"),
+        sender=headers.get("From", ""),
+        recipients=[headers.get("To", "")],
+        date=date,
+        snippet=msg.get("snippet", ""),
+        labels=msg.get("labelIds", []),
+        is_read="UNREAD" not in msg.get("labelIds", []),
+    )
+
+
+def get_email(message_id: str) -> Email | None:
+    """Get full email with body and attachments.
+
+    Args:
+        message_id: Gmail message ID.
+
+    Returns:
+        Full Email object, or None if not found.
+    """
+    service = get_gmail_service()
+
+    try:
+        request = (
+            service.users()
+            .messages()
+            .get(
+                userId="me",
+                id=message_id,
+                format="full",
+            )
+        )
+        msg = _execute_with_retry(request)
+    except HttpError as e:
+        if e.resp.status == 404:
+            return None
+        raise
+
+    headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+
+    # Parse date
+    date_str = headers.get("Date", "")
+    try:
+        date = parsedate_to_datetime(date_str)
+    except Exception:
+        internal_date = int(msg.get("internalDate", 0))
+        date = datetime.fromtimestamp(internal_date / 1000, tz=UTC)
+
+    # Parse recipients
+    to_header = headers.get("To", "")
+    cc_header = headers.get("Cc", "")
+    recipients = [r.strip() for r in to_header.split(",") if r.strip()]
+    cc = [r.strip() for r in cc_header.split(",") if r.strip()]
+
+    # Extract body and attachments
+    body_text, body_html, attachments = _parse_message_parts(msg.get("payload", {}), message_id)
+
+    return Email(
+        id=msg["id"],
+        thread_id=msg["threadId"],
+        subject=headers.get("Subject", "(kein Betreff)"),
+        sender=headers.get("From", ""),
+        recipients=recipients,
+        cc=cc,
+        date=date,
+        body_text=body_text,
+        body_html=body_html,
+        snippet=msg.get("snippet", ""),
+        labels=msg.get("labelIds", []),
+        attachments=attachments,
+        is_read="UNREAD" not in msg.get("labelIds", []),
+        message_id=headers.get("Message-ID", ""),
+        references=[r.strip() for r in headers.get("References", "").split() if r.strip()],
+    )
+
+
+def _parse_message_parts(payload: dict, message_id: str) -> tuple[str, str, list[Attachment]]:
+    """Parse message payload to extract body and attachments.
+
+    Args:
+        payload: Message payload from API.
+        message_id: Message ID for attachment references.
+
+    Returns:
+        Tuple of (body_text, body_html, attachments).
+    """
+    body_text = ""
+    body_html = ""
+    attachments = []
+
+    mime_type = payload.get("mimeType", "")
+
+    if mime_type == "text/plain":
+        data = payload.get("body", {}).get("data", "")
+        if data:
+            body_text = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+
+    elif mime_type == "text/html":
+        data = payload.get("body", {}).get("data", "")
+        if data:
+            body_html = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+
+    elif "multipart" in mime_type:
+        for part in payload.get("parts", []):
+            part_mime = part.get("mimeType", "")
+            filename = part.get("filename", "")
+
+            if filename:
+                # This is an attachment
+                attachment_id = part.get("body", {}).get("attachmentId", "")
+                size = part.get("body", {}).get("size", 0)
+                attachments.append(
+                    Attachment(
+                        id=attachment_id,
+                        message_id=message_id,
+                        filename=filename,
+                        mime_type=part_mime,
+                        size=size,
+                    )
+                )
+            elif part_mime == "text/plain":
+                data = part.get("body", {}).get("data", "")
+                if data:
+                    body_text = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+            elif part_mime == "text/html":
+                data = part.get("body", {}).get("data", "")
+                if data:
+                    body_html = base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+            elif "multipart" in part_mime:
+                # Recursive parsing for nested multipart
+                sub_text, sub_html, sub_attachments = _parse_message_parts(part, message_id)
+                if not body_text:
+                    body_text = sub_text
+                if not body_html:
+                    body_html = sub_html
+                attachments.extend(sub_attachments)
+
+    return body_text, body_html, attachments
+
+
+def get_attachment(message_id: str, attachment_id: str) -> bytes | None:
+    """Get attachment data.
+
+    Args:
+        message_id: Gmail message ID.
+        attachment_id: Attachment ID.
+
+    Returns:
+        Attachment data as bytes, or None if not found.
+    """
+    service = get_gmail_service()
+
+    try:
+        request = (
+            service.users()
+            .messages()
+            .attachments()
+            .get(
+                userId="me",
+                messageId=message_id,
+                id=attachment_id,
+            )
+        )
+        response = _execute_with_retry(request)
+        data = response.get("data", "")
+        return base64.urlsafe_b64decode(data)
+    except HttpError:
+        return None
+
+
+def download_attachment(message_id: str, attachment_id: str, output_path: str) -> bool:
+    """Download attachment to file.
+
+    Args:
+        message_id: Gmail message ID.
+        attachment_id: Attachment ID.
+        output_path: Path to save the file.
+
+    Returns:
+        True if download successful, False otherwise.
+    """
+    data = get_attachment(message_id, attachment_id)
+
+    if data is None:
+        return False
+
+    with open(output_path, "wb") as f:
+        f.write(data)
+
+    return True
+
+
+def get_signature() -> str | None:
+    """Get the user's Gmail signature.
+
+    Returns:
+        The signature HTML/text, or None if not set.
+    """
+    service = get_gmail_service()
+
+    try:
+        # Get send-as settings (includes signature)
+        request = service.users().settings().sendAs().list(userId="me")
+        response = _execute_with_retry(request)
+
+        send_as_list = response.get("sendAs", [])
+        for send_as in send_as_list:
+            if send_as.get("isPrimary", False):
+                signature = send_as.get("signature", "")
+                return signature if signature else None
+
+        return None
+    except HttpError:
+        return None
+
+
+def compose_email(
+    to: list[str],
+    subject: str,
+    body: str,
+    cc: list[str] | None = None,
+    bcc: list[str] | None = None,
+    attachments: list[str] | None = None,
+    html_body: str | None = None,
+) -> dict:
+    """Compose an email message.
+
+    Args:
+        to: List of recipient email addresses.
+        subject: Email subject.
+        body: Email body text (plain text).
+        cc: List of CC recipients.
+        bcc: List of BCC recipients.
+        attachments: List of file paths to attach.
+        html_body: Optional HTML version of the body.
+
+    Returns:
+        Message dict ready for Gmail API.
+    """
+    msg = EmailMessage()
+    msg["To"] = ", ".join(to)
+    msg["Subject"] = subject
+
+    if cc:
+        msg["Cc"] = ", ".join(cc)
+    if bcc:
+        msg["Bcc"] = ", ".join(bcc)
+
+    # Set plain text content
+    msg.set_content(body)
+
+    # Add HTML alternative if provided
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
+
+    # Add attachments
+    if attachments:
+        for filepath in attachments:
+            path = Path(filepath)
+            if not path.exists():
+                continue
+
+            mime_type, _ = mimetypes.guess_type(str(path))
+            if mime_type is None:
+                mime_type = "application/octet-stream"
+
+            maintype, subtype = mime_type.split("/", 1)
+
+            with open(path, "rb") as f:
+                data = f.read()
+                msg.add_attachment(
+                    data,
+                    maintype=maintype,
+                    subtype=subtype,
+                    filename=path.name,
+                )
+
+    # Encode for Gmail API
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
+    return {"raw": raw}
+
+
+def compose_reply(
+    to: list[str],
+    subject: str,
+    body: str,
+    thread_id: str,
+    message_id: str,
+    references: list[str] | None = None,
+    cc: list[str] | None = None,
+    attachments: list[str] | None = None,
+    html_body: str | None = None,
+) -> dict:
+    """Compose a reply email.
+
+    Args:
+        to: List of recipient email addresses.
+        subject: Email subject.
+        body: Reply body text (plain text).
+        thread_id: Thread ID to reply in.
+        message_id: Message-ID of email being replied to.
+        references: List of previous Message-IDs in thread.
+        cc: List of CC recipients.
+        attachments: List of file paths to attach.
+        html_body: Optional HTML version of the body.
+
+    Returns:
+        Message dict ready for Gmail API with thread info.
+    """
+    msg = EmailMessage()
+    msg["To"] = ", ".join(to)
+    msg["Subject"] = subject
+
+    if cc:
+        msg["Cc"] = ", ".join(cc)
+
+    # Threading headers
+    msg["In-Reply-To"] = message_id
+    all_refs = (references or []) + [message_id]
+    msg["References"] = " ".join(all_refs)
+
+    # Set plain text content
+    msg.set_content(body)
+
+    # Add HTML alternative if provided
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
+
+    # Add attachments
+    if attachments:
+        for filepath in attachments:
+            path = Path(filepath)
+            if not path.exists():
+                continue
+
+            mime_type, _ = mimetypes.guess_type(str(path))
+            if mime_type is None:
+                mime_type = "application/octet-stream"
+
+            maintype, subtype = mime_type.split("/", 1)
+
+            with open(path, "rb") as f:
+                data = f.read()
+                msg.add_attachment(
+                    data,
+                    maintype=maintype,
+                    subtype=subtype,
+                    filename=path.name,
+                )
+
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
+    return {"raw": raw, "threadId": thread_id}
+
+
+class SendError(Exception):
+    """Error when sending email fails."""
+
+    def __init__(self, message: str, status_code: int | None = None):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
+def send_email(message: dict) -> dict:
+    """Send an email message.
+
+    Args:
+        message: Message dict from compose_email or compose_reply.
+
+    Returns:
+        API response with message ID.
+
+    Raises:
+        SendError: If sending fails.
+    """
+    service = get_gmail_service()
+
+    try:
+        request = service.users().messages().send(userId="me", body=message)
+        return _execute_with_retry(request)
+    except HttpError as e:
+        error_msg = str(e)
+        if e.resp.status == 400:
+            error_msg = "Ungültige E-Mail-Adresse oder Nachrichtenformat"
+        elif e.resp.status == 403:
+            error_msg = "Keine Berechtigung zum Senden"
+        elif e.resp.status == 429:
+            error_msg = "Zu viele Anfragen - bitte warte einen Moment"
+        raise SendError(error_msg, e.resp.status) from e
