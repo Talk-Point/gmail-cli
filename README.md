@@ -20,6 +20,16 @@ A powerful command-line interface for Gmail, inspired by GitHub's `gh` CLI. Mana
 - [uv](https://github.com/astral-sh/uv) package manager
 - A Google Cloud project with Gmail API enabled
 
+### Install from GitHub
+
+```bash
+# Install directly from GitHub
+uv tool install git+https://github.com/Talk-Point/gmail-cli.git
+
+# Update to latest version
+uv tool upgrade gmail-cli
+```
+
 ### Install from source
 
 ```bash
@@ -28,9 +38,15 @@ cd gmail-cli
 uv tool install .
 ```
 
-Or run directly without installing:
+### Run without installing
 
 ```bash
+# Run directly from GitHub
+uvx --from git+https://github.com/Talk-Point/gmail-cli.git gmail --help
+
+# Or clone and run locally
+git clone https://github.com/Talk-Point/gmail-cli.git
+cd gmail-cli
 uv run gmail --help
 ```
 
