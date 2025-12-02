@@ -205,6 +205,13 @@ def reply_command(
             help="File to attach. Can be specified multiple times.",
         ),
     ] = None,
+    cc: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--cc",
+            help="CC recipient. Can be specified multiple times.",
+        ),
+    ] = None,
     signature: Annotated[
         bool,
         typer.Option(
@@ -221,6 +228,7 @@ def reply_command(
         gmail reply 18c1234abcd5678 --body-file reply.txt
         gmail reply 18c1234abcd5678 --all --body "Thanks everyone!"
         gmail reply 18c1234abcd5678 --body "Danke!" --signature
+        gmail reply 18c1234abcd5678 --body "Info" --cc support@example.com
     """
     # Get original email
     email = get_email(message_id)
@@ -287,6 +295,13 @@ def reply_command(
     if not subject.lower().startswith("re:"):
         subject = f"Re: {subject}"
 
+    # Build CC list: combine user-specified CC with original CC (if reply_all)
+    reply_cc = list(cc) if cc else []
+    if reply_all and email.cc:
+        for addr in email.cc:
+            if addr not in reply_cc:
+                reply_cc.append(addr)
+
     # Compose reply
     message = compose_reply(
         to=recipients,
@@ -295,7 +310,7 @@ def reply_command(
         thread_id=email.thread_id,
         message_id=email.message_id or f"<{email.id}@gmail.com>",
         references=email.references,
-        cc=email.cc if reply_all else None,
+        cc=reply_cc if reply_cc else None,
         attachments=attach,
         html_body=html_body,
     )
