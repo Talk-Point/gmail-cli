@@ -61,7 +61,7 @@ uv run gmail --help
 
 ## Quick Start
 
-Download secret from https://tower.talk-point.de/credential/views/credentials/73Z7R8G/detail/ and create credentials.json in current directory. Delete after `$ gmail auth login`
+Download the secret, `credential.json` in current directory. Delete after `$ gmail auth login`
 
 ```bash
 # 1. Authenticate with Gmail
