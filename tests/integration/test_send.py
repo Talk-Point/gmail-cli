@@ -203,9 +203,14 @@ class TestReplyCommand:
             result = runner.invoke(
                 app,
                 [
-                    "reply", "msg123", "--body", "Thanks!",
-                    "--cc", "support@example.com",
-                    "--cc", "team@example.com",
+                    "reply",
+                    "msg123",
+                    "--body",
+                    "Thanks!",
+                    "--cc",
+                    "support@example.com",
+                    "--cc",
+                    "team@example.com",
                 ],
             )
 
@@ -241,9 +246,13 @@ class TestReplyCommand:
             result = runner.invoke(
                 app,
                 [
-                    "reply", "msg123", "--body", "Thanks!",
+                    "reply",
+                    "msg123",
+                    "--body",
+                    "Thanks!",
                     "--all",
-                    "--cc", "new-cc@example.com",
+                    "--cc",
+                    "new-cc@example.com",
                 ],
             )
 
