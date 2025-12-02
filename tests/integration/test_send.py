@@ -142,3 +142,122 @@ class TestReplyCommand:
             )
 
             assert result.exit_code == 1
+
+    def test_reply_with_cc(self) -> None:
+        """Test replying to an email with CC recipients."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+        ):
+            mock_auth.return_value = True
+            mock_get.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Original Subject",
+                sender="sender@example.com",
+                recipients=["me@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                message_id="<original@gmail.com>",
+                references=[],
+            )
+            mock_compose.return_value = {"raw": "test", "threadId": "thread123"}
+            mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                ["reply", "msg123", "--body", "Thanks!", "--cc", "support@example.com"],
+            )
+
+            assert result.exit_code == 0
+            mock_compose.assert_called_once()
+            # Verify CC was passed to compose_reply
+            call_kwargs = mock_compose.call_args.kwargs
+            assert call_kwargs["cc"] == ["support@example.com"]
+
+    def test_reply_with_multiple_cc(self) -> None:
+        """Test replying with multiple CC recipients."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+        ):
+            mock_auth.return_value = True
+            mock_get.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Original Subject",
+                sender="sender@example.com",
+                recipients=["me@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                message_id="<original@gmail.com>",
+                references=[],
+            )
+            mock_compose.return_value = {"raw": "test", "threadId": "thread123"}
+            mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "reply",
+                    "msg123",
+                    "--body",
+                    "Thanks!",
+                    "--cc",
+                    "support@example.com",
+                    "--cc",
+                    "team@example.com",
+                ],
+            )
+
+            assert result.exit_code == 0
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "support@example.com" in call_kwargs["cc"]
+            assert "team@example.com" in call_kwargs["cc"]
+
+    def test_reply_all_with_cc_merges_recipients(self) -> None:
+        """Test that reply all merges user CC with original CC."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+        ):
+            mock_auth.return_value = True
+            mock_get.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Original Subject",
+                sender="sender@example.com",
+                recipients=["me@example.com"],
+                cc=["original-cc@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                message_id="<original@gmail.com>",
+                references=[],
+            )
+            mock_compose.return_value = {"raw": "test", "threadId": "thread123"}
+            mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "reply",
+                    "msg123",
+                    "--body",
+                    "Thanks!",
+                    "--all",
+                    "--cc",
+                    "new-cc@example.com",
+                ],
+            )
+
+            assert result.exit_code == 0
+            call_kwargs = mock_compose.call_args.kwargs
+            # Should contain both user-specified and original CC
+            assert "new-cc@example.com" in call_kwargs["cc"]
+            assert "original-cc@example.com" in call_kwargs["cc"]
