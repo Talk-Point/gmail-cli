@@ -283,3 +283,56 @@ class TestMultiAccountCredentials:
             result = migrate_legacy_credentials()
 
             assert result is False
+
+    def test_delete_credentials_updates_default_when_deleted(self) -> None:
+        """Test delete_credentials updates default when deleting default account."""
+        with patch("gmail_cli.services.credentials.keyring") as mock_keyring:
+            import json
+
+            def get_password_side_effect(_service: str, key: str) -> str | None:
+                if key == "accounts_list":
+                    return json.dumps(["first@gmail.com", "second@gmail.com"])
+                if key == "default_account":
+                    return "first@gmail.com"
+                return None
+
+            mock_keyring.get_password.side_effect = get_password_side_effect
+
+            from gmail_cli.services.credentials import delete_credentials
+
+            delete_credentials(account="first@gmail.com")
+
+            # Should have updated default to second account
+            set_calls = [
+                c for c in mock_keyring.set_password.call_args_list if "default_account" in str(c)
+            ]
+            assert len(set_calls) >= 1
+
+    def test_clear_all_accounts(self) -> None:
+        """Test clear_all_accounts removes all account data."""
+        with patch("gmail_cli.services.credentials.keyring") as mock_keyring:
+            import json
+
+            mock_keyring.get_password.return_value = json.dumps(
+                ["user1@gmail.com", "user2@gmail.com"]
+            )
+
+            from gmail_cli.services.credentials import clear_all_accounts
+
+            clear_all_accounts()
+
+            # Should have deleted credentials for both accounts plus metadata
+            delete_calls = mock_keyring.delete_password.call_args_list
+            assert len(delete_calls) >= 2  # At least the two account credentials
+
+    def test_has_credentials_with_account(self) -> None:
+        """Test has_credentials with specific account."""
+        with patch("gmail_cli.services.credentials.keyring") as mock_keyring:
+            mock_keyring.get_password.return_value = '{"token": "test"}'
+
+            from gmail_cli.services.credentials import has_credentials
+
+            result = has_credentials(account="test@gmail.com")
+
+            assert result is True
+            mock_keyring.get_password.assert_called_with("gmail-cli", "oauth_test@gmail.com")
