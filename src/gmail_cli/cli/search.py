@@ -13,6 +13,16 @@ from gmail_cli.utils.output import (
     print_search_results,
 )
 
+# Shared account option type
+AccountOption = Annotated[
+    str | None,
+    typer.Option(
+        "--account",
+        "-A",
+        help="Account email to use. Defaults to the default account.",
+    ),
+]
+
 
 @require_auth
 def search_command(
@@ -91,6 +101,7 @@ def search_command(
             help="Page token for pagination.",
         ),
     ] = None,
+    account: AccountOption = None,
 ) -> None:
     """Search emails with filters and pagination.
 
@@ -99,6 +110,7 @@ def search_command(
         gmail search --from sender@example.com
         gmail search --label INBOX --has-attachment
         gmail search --after 2025-01-01 --before 2025-12-31
+        gmail search "project" --account work@company.com
     """
     result = search_emails(
         query=query,
@@ -111,6 +123,7 @@ def search_command(
         has_attachment=has_attachment,
         limit=limit,
         page_token=page,
+        account=account,
     )
 
     if is_json_mode():

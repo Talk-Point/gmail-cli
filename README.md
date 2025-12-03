@@ -4,6 +4,7 @@ A powerful command-line interface for Gmail, inspired by GitHub's `gh` CLI. Mana
 
 ## Features
 
+- **Multi-Account Support** - Authenticate and manage multiple Gmail accounts
 - **Authentication** - Secure OAuth 2.0 login with credentials stored in your system's keyring
 - **Search** - Find emails with powerful filters (sender, recipient, date, labels, attachments)
 - **Read** - View full email content with automatic HTML-to-text conversion
@@ -85,12 +86,66 @@ gmail send --to recipient@example.com --subject "Hello" --body "Hi there!"
 # Login via OAuth (opens browser)
 gmail auth login
 
-# Check authentication status
+# Add another account
+gmail auth login
+
+# Add account and set as default
+gmail auth login --set-default
+
+# Check authentication status (shows all accounts)
 gmail auth status
 
-# Logout and delete stored credentials
+# Set default account
+gmail auth set-default work@company.com
+
+# Logout default account
 gmail auth logout
+
+# Logout specific account
+gmail auth logout --account work@company.com
+
+# Logout all accounts
+gmail auth logout --all
 ```
+
+### Account Management
+
+```bash
+# List all configured accounts (default marked with *)
+gmail accounts list
+```
+
+### Multi-Account Usage
+
+All commands support the `--account` option to specify which account to use:
+
+```bash
+# Search in specific account
+gmail search "invoice" --account work@company.com
+
+# Read email from specific account
+gmail read 18c1234abcd5678 --account personal@gmail.com
+
+# Send from specific account
+gmail send --to recipient@example.com --subject "Hello" --body "Hi!" --account work@company.com
+```
+
+You can also set the default account via environment variable:
+
+```bash
+# Set default account via environment variable
+export GMAIL_ACCOUNT=work@company.com
+gmail search "test"  # Uses work@company.com
+
+# --account flag always takes precedence
+gmail search "test" --account personal@gmail.com  # Uses personal@gmail.com
+```
+
+**Account Resolution Priority:**
+1. `--account` flag (highest priority)
+2. `GMAIL_ACCOUNT` environment variable
+3. Configured default account
+4. First authenticated account
 
 ### Search Emails
 
@@ -127,6 +182,7 @@ gmail search "reports" --page <token>  # Use token from previous results
 | `--has-attachment` | `-a` | Only emails with attachments |
 | `--limit` | `-n` | Max results (default: 20) |
 | `--page` | | Pagination token |
+| `--account` | `-A` | Use specific account |
 
 ### Read Emails
 
@@ -136,6 +192,9 @@ gmail read 18c1234abcd5678
 
 # Show raw content without HTML conversion
 gmail read 18c1234abcd5678 --raw
+
+# Read from specific account
+gmail read 18c1234abcd5678 --account work@company.com
 ```
 
 ### Send Emails
@@ -173,6 +232,7 @@ gmail send --to recipient@example.com --subject "Hello" --body "Best regards" --
 | `--bcc` | | BCC recipient (repeatable) |
 | `--attach` | `-a` | File to attach (repeatable) |
 | `--signature` | `--sig` | Append your Gmail signature |
+| `--account` | `-A` | Use specific account |
 
 ### Reply to Emails
 
@@ -201,6 +261,7 @@ gmail reply 18c1234abcd5678 --body "Thanks!" --signature
 | `--all` | `-a` | Reply to all recipients |
 | `--attach` | | File to attach (repeatable) |
 | `--signature` | `--sig` | Append your Gmail signature |
+| `--account` | `-A` | Use specific account |
 
 ### Manage Attachments
 
@@ -216,6 +277,9 @@ gmail attachment download 18c1234abcd5678 document.pdf --output ~/Downloads/doc.
 
 # Download all attachments
 gmail attachment download 18c1234abcd5678 --all
+
+# From specific account
+gmail attachment list 18c1234abcd5678 --account work@company.com
 ```
 
 ### Global Options
@@ -279,6 +343,8 @@ OAuth tokens are securely stored in your system's native keyring:
 - **Windows**: Credential Manager
 - **Linux**: Secret Service (GNOME Keyring, KWallet)
 
+Each account's credentials are stored separately, allowing multiple Gmail accounts to be authenticated simultaneously.
+
 ### OAuth Scopes
 
 The CLI requests the following Gmail API scopes:
@@ -299,6 +365,7 @@ gmail-cli/
 │   ├── __main__.py          # Entry point
 │   ├── cli/
 │   │   ├── main.py          # Typer app, global options
+│   │   ├── accounts.py      # Account management commands
 │   │   ├── auth.py          # Auth commands + @require_auth decorator
 │   │   ├── search.py        # Search command
 │   │   ├── read.py          # Read command

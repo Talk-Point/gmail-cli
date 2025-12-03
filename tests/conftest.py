@@ -140,3 +140,95 @@ def mock_keyring():
     """Mock the keyring module."""
     with patch("gmail_cli.services.credentials.keyring") as mock:
         yield mock
+
+
+@pytest.fixture
+def mock_multi_account_keyring():
+    """Mock keyring with multiple accounts configured."""
+    import json
+
+    accounts_data = {
+        "accounts_list": json.dumps(["user@gmail.com", "work@company.com"]),
+        "default_account": "user@gmail.com",
+        "oauth_user@gmail.com": json.dumps(
+            {
+                "token": "user_access_token",
+                "refresh_token": "user_refresh_token",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "client_id": "client_id",
+                "client_secret": "client_secret",
+                "expiry": "2025-12-01T16:30:00+00:00",
+            }
+        ),
+        "oauth_work@company.com": json.dumps(
+            {
+                "token": "work_access_token",
+                "refresh_token": "work_refresh_token",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "client_id": "client_id",
+                "client_secret": "client_secret",
+                "expiry": "2025-12-01T17:00:00+00:00",
+            }
+        ),
+    }
+
+    def get_password(_service: str, key: str) -> str | None:
+        return accounts_data.get(key)
+
+    with patch("gmail_cli.services.credentials.keyring") as mock:
+        mock.get_password.side_effect = get_password
+        yield mock
+
+
+@pytest.fixture
+def mock_single_account_auth():
+    """Mock authentication with a single account."""
+    with (
+        patch("gmail_cli.services.auth.list_accounts") as mock_list,
+        patch("gmail_cli.services.auth.get_default_account") as mock_default,
+        patch("gmail_cli.services.auth.load_credentials") as mock_load,
+        patch("gmail_cli.services.auth.migrate_legacy_credentials") as mock_migrate,
+    ):
+        mock_list.return_value = ["user@gmail.com"]
+        mock_default.return_value = "user@gmail.com"
+        mock_migrate.return_value = False
+
+        mock_creds = MagicMock()
+        mock_creds.valid = True
+        mock_creds.expired = False
+        mock_creds.token = "mock_token"
+        mock_load.return_value = mock_creds
+
+        yield {
+            "list_accounts": mock_list,
+            "get_default_account": mock_default,
+            "load_credentials": mock_load,
+            "credentials": mock_creds,
+        }
+
+
+@pytest.fixture
+def mock_multi_account_auth():
+    """Mock authentication with multiple accounts."""
+    with (
+        patch("gmail_cli.services.auth.list_accounts") as mock_list,
+        patch("gmail_cli.services.auth.get_default_account") as mock_default,
+        patch("gmail_cli.services.auth.load_credentials") as mock_load,
+        patch("gmail_cli.services.auth.migrate_legacy_credentials") as mock_migrate,
+    ):
+        mock_list.return_value = ["user@gmail.com", "work@company.com"]
+        mock_default.return_value = "user@gmail.com"
+        mock_migrate.return_value = False
+
+        mock_creds = MagicMock()
+        mock_creds.valid = True
+        mock_creds.expired = False
+        mock_creds.token = "mock_token"
+        mock_load.return_value = mock_creds
+
+        yield {
+            "list_accounts": mock_list,
+            "get_default_account": mock_default,
+            "load_credentials": mock_load,
+            "credentials": mock_creds,
+        }
