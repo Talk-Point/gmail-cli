@@ -70,7 +70,7 @@ def require_auth(func: Callable[..., Any]) -> Callable[..., Any]:
                 print_json_error(
                     "TOKEN_EXPIRED",
                     f"Token abgelaufen für {e.account or 'Account'}",
-                    f"Führe 'gmail auth login' aus um dich erneut anzumelden.",
+                    "Führe 'gmail auth login' aus um dich erneut anzumelden.",
                 )
             else:
                 print_error(
