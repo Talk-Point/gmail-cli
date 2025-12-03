@@ -81,6 +81,132 @@ class TestSendCommand:
             assert result.exit_code == 1
             assert "Ungültige E-Mail-Adresse" in result.output
 
+    def test_send_requires_body(self) -> None:
+        """Test that send requires body content."""
+        with patch("gmail_cli.cli.auth.is_authenticated") as mock_auth:
+            mock_auth.return_value = True
+
+            result = runner.invoke(
+                app,
+                ["send", "--to", "recipient@example.com", "--subject", "Test"],
+            )
+
+            assert result.exit_code == 1
+            assert "E-Mail-Text erforderlich" in result.output
+
+    def test_send_with_body_file(self, tmp_path) -> None:
+        """Test sending email with body from file."""
+        body_file = tmp_path / "body.txt"
+        body_file.write_text("Hello from file!")
+
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+        ):
+            mock_auth.return_value = True
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body-file",
+                    str(body_file),
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Verify compose was called with file content
+            call_kwargs = mock_compose.call_args.kwargs
+            assert call_kwargs["body"] == "Hello from file!"
+
+    def test_send_body_file_not_found(self) -> None:
+        """Test error when body file doesn't exist."""
+        with patch("gmail_cli.cli.auth.is_authenticated") as mock_auth:
+            mock_auth.return_value = True
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body-file",
+                    "/nonexistent/file.txt",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "Datei nicht gefunden" in result.output
+
+    def test_send_with_signature(self) -> None:
+        """Test sending email with Gmail signature."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = "<div>My Signature</div>"
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi there",
+                    "--signature",
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Verify compose was called with signature in body
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "--" in call_kwargs["body"]  # Signature separator
+
+    def test_send_json_output(self) -> None:
+        """Test send command with JSON output."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+        ):
+            mock_auth.return_value = True
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "--json",
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi",
+                ],
+            )
+
+            assert result.exit_code == 0
+            assert '"message_id": "sent123"' in result.output
+
 
 class TestReplyCommand:
     """Tests for gmail reply command."""

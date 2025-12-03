@@ -4,8 +4,10 @@ from unittest.mock import MagicMock, patch
 
 from gmail_cli.services.auth import (
     get_credentials,
+    get_token_expiry,
     get_user_email,
     is_authenticated,
+    logout,
     refresh_credentials,
 )
 
@@ -206,3 +208,147 @@ class TestAccountResolution:
                 raise AssertionError("Expected NoAccountConfiguredError")
             except NoAccountConfiguredError:
                 pass  # Expected
+
+
+class TestLogout:
+    """Tests for logout functionality."""
+
+    def test_logout_all_accounts(self) -> None:
+        """Test logout all accounts clears everything."""
+        with (
+            patch("gmail_cli.services.auth.list_accounts") as mock_list,
+            patch("gmail_cli.services.auth.clear_all_accounts") as mock_clear,
+        ):
+            mock_list.return_value = ["user@gmail.com", "work@company.com"]
+
+            result = logout(all_accounts=True)
+
+            assert result == ["user@gmail.com", "work@company.com"]
+            mock_clear.assert_called_once()
+
+    def test_logout_specific_account(self) -> None:
+        """Test logout specific account."""
+        with patch("gmail_cli.services.auth.delete_credentials") as mock_delete:
+            result = logout(account="user@gmail.com")
+
+            assert result == ["user@gmail.com"]
+            mock_delete.assert_called_once_with(account="user@gmail.com")
+
+    def test_logout_default_account(self) -> None:
+        """Test logout default account when no account specified."""
+        with (
+            patch("gmail_cli.services.auth.resolve_account") as mock_resolve,
+            patch("gmail_cli.services.auth.delete_credentials") as mock_delete,
+        ):
+            mock_resolve.return_value = "default@gmail.com"
+
+            result = logout()
+
+            assert result == ["default@gmail.com"]
+            mock_delete.assert_called_once_with(account="default@gmail.com")
+
+    def test_logout_returns_empty_when_no_accounts(self) -> None:
+        """Test logout returns empty list when no accounts to logout."""
+        from gmail_cli.services.auth import NoAccountConfiguredError
+
+        with patch("gmail_cli.services.auth.resolve_account") as mock_resolve:
+            mock_resolve.side_effect = NoAccountConfiguredError()
+
+            result = logout()
+
+            assert result == []
+
+
+class TestTokenExpiry:
+    """Tests for token expiry functionality."""
+
+    def test_get_token_expiry_returns_formatted_time(self) -> None:
+        """Test get_token_expiry returns formatted expiry time."""
+        from datetime import datetime
+
+        with (
+            patch("gmail_cli.services.auth.resolve_account") as mock_resolve,
+            patch("gmail_cli.services.auth.load_credentials") as mock_load,
+        ):
+            mock_resolve.return_value = "user@gmail.com"
+            mock_creds = MagicMock()
+            mock_creds.expiry = datetime(2025, 12, 1, 16, 30, 0)
+            mock_load.return_value = mock_creds
+
+            result = get_token_expiry()
+
+            assert result == "2025-12-01 16:30:00"
+
+    def test_get_token_expiry_returns_none_when_no_credentials(self) -> None:
+        """Test get_token_expiry returns None when no credentials."""
+        with (
+            patch("gmail_cli.services.auth.resolve_account") as mock_resolve,
+            patch("gmail_cli.services.auth.load_credentials") as mock_load,
+        ):
+            mock_resolve.return_value = "user@gmail.com"
+            mock_load.return_value = None
+
+            result = get_token_expiry()
+
+            assert result is None
+
+    def test_get_token_expiry_returns_none_when_no_expiry(self) -> None:
+        """Test get_token_expiry returns None when credentials have no expiry."""
+        with (
+            patch("gmail_cli.services.auth.resolve_account") as mock_resolve,
+            patch("gmail_cli.services.auth.load_credentials") as mock_load,
+        ):
+            mock_resolve.return_value = "user@gmail.com"
+            mock_creds = MagicMock()
+            mock_creds.expiry = None
+            mock_load.return_value = mock_creds
+
+            result = get_token_expiry()
+
+            assert result is None
+
+
+class TestIsAuthenticatedWithAccount:
+    """Tests for is_authenticated with specific account."""
+
+    def test_is_authenticated_with_specific_account_valid(self) -> None:
+        """Test is_authenticated returns True for specific valid account."""
+        with patch("gmail_cli.services.auth.get_credentials") as mock_get_creds:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_get_creds.return_value = mock_creds
+
+            result = is_authenticated(account="user@gmail.com")
+
+            assert result is True
+            mock_get_creds.assert_called_once_with(account="user@gmail.com")
+
+    def test_is_authenticated_with_specific_account_invalid(self) -> None:
+        """Test is_authenticated returns False for specific invalid account."""
+        with patch("gmail_cli.services.auth.get_credentials") as mock_get_creds:
+            mock_get_creds.return_value = None
+
+            result = is_authenticated(account="unknown@gmail.com")
+
+            assert result is False
+
+
+class TestGetUserEmail:
+    """Tests for get_user_email functionality."""
+
+    def test_get_user_email_with_specific_account(self) -> None:
+        """Test get_user_email returns the specified account."""
+        result = get_user_email(account="specific@gmail.com")
+
+        assert result == "specific@gmail.com"
+
+    def test_get_user_email_returns_none_when_no_accounts(self) -> None:
+        """Test get_user_email returns None when no accounts configured."""
+        from gmail_cli.services.auth import NoAccountConfiguredError
+
+        with patch("gmail_cli.services.auth.resolve_account") as mock_resolve:
+            mock_resolve.side_effect = NoAccountConfiguredError()
+
+            result = get_user_email()
+
+            assert result is None
