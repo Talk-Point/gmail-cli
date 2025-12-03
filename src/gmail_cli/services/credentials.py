@@ -171,6 +171,7 @@ def delete_credentials(account: str | None = None) -> None:
                     try:
                         keyring.delete_password(SERVICE_NAME, DEFAULT_ACCOUNT_KEY)
                     except keyring.errors.PasswordDeleteError:
+                        # Default account key may not exist; safe to ignore
                         pass
         else:
             # Legacy single-account format
@@ -232,6 +233,7 @@ def migrate_legacy_credentials() -> bool:
         try:
             keyring.delete_password(SERVICE_NAME, LEGACY_ACCOUNT_NAME)
         except keyring.errors.PasswordDeleteError:
+            # Legacy key already removed; safe to ignore
             pass
         return False
 
@@ -252,6 +254,7 @@ def migrate_legacy_credentials() -> bool:
     try:
         keyring.delete_password(SERVICE_NAME, LEGACY_ACCOUNT_NAME)
     except keyring.errors.PasswordDeleteError:
+        # Legacy key may have been removed already; safe to ignore
         pass
 
     return True
@@ -267,14 +270,17 @@ def clear_all_accounts() -> None:
         try:
             keyring.delete_password(SERVICE_NAME, _get_account_key(account))
         except keyring.errors.PasswordDeleteError:
+            # Account credentials may not exist; continue with others
             pass
 
     try:
         keyring.delete_password(SERVICE_NAME, ACCOUNTS_LIST_KEY)
     except keyring.errors.PasswordDeleteError:
+        # Accounts list may not exist; safe to ignore
         pass
 
     try:
         keyring.delete_password(SERVICE_NAME, DEFAULT_ACCOUNT_KEY)
     except keyring.errors.PasswordDeleteError:
+        # Default account key may not exist; safe to ignore
         pass

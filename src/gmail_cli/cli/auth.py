@@ -158,7 +158,7 @@ def login(
 def logout_command(
     account: Annotated[
         str | None,
-        typer.Option("--account", "-a", help="Specific account to log out."),
+        typer.Option("--account", "-A", help="Specific account to log out."),
     ] = None,
     all_accounts: Annotated[
         bool,
