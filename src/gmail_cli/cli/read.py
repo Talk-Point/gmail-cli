@@ -15,6 +15,16 @@ from gmail_cli.utils.output import (
     print_json_error,
 )
 
+# Account option type
+AccountOption = Annotated[
+    str | None,
+    typer.Option(
+        "--account",
+        "-A",
+        help="Account email to use. Defaults to the default account.",
+    ),
+]
+
 
 @require_auth
 def read_command(
@@ -32,14 +42,16 @@ def read_command(
             help="Show raw body without HTML conversion.",
         ),
     ] = False,
+    account: AccountOption = None,
 ) -> None:
     """Read a full email by its message ID.
 
     Examples:
         gmail read 18c1234abcd5678
         gmail read 18c1234abcd5678 --raw
+        gmail read 18c1234abcd5678 --account work@company.com
     """
-    email = get_email(message_id)
+    email = get_email(message_id, account=account)
 
     if not email:
         if is_json_mode():

@@ -1,6 +1,6 @@
 [project]
 name = "gmail-cli"
-version = "0.2.0"
+version = "0.3.0"
 description = "A command-line interface for Gmail, similar to gh CLI"
 readme = "README.md"
 license = { text = "MIT" }
@@ -84,3 +84,8 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.0.0",
+]

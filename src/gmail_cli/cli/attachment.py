@@ -18,6 +18,16 @@ from gmail_cli.utils.output import (
     print_table,
 )
 
+# Account option type
+AccountOption = Annotated[
+    str | None,
+    typer.Option(
+        "--account",
+        "-A",
+        help="Account email to use. Defaults to the default account.",
+    ),
+]
+
 attachment_app = typer.Typer(
     name="attachment",
     help="Manage email attachments.",
@@ -34,13 +44,15 @@ def list_attachments(
             help="The email message ID.",
         ),
     ],
+    account: AccountOption = None,
 ) -> None:
     """List attachments for an email.
 
     Examples:
         gmail attachment list 18c1234abcd5678
+        gmail attachment list 18c1234abcd5678 --account work@company.com
     """
-    email = get_email(message_id)
+    email = get_email(message_id, account=account)
 
     if not email:
         if is_json_mode():
@@ -108,6 +120,7 @@ def download_attachment_command(
             help="Download all attachments (filename argument is ignored).",
         ),
     ] = False,
+    account: AccountOption = None,
 ) -> None:
     """Download an attachment from an email.
 
@@ -115,8 +128,9 @@ def download_attachment_command(
         gmail attachment download 18c1234abcd5678 document.pdf
         gmail attachment download 18c1234abcd5678 document.pdf --output ~/Downloads/doc.pdf
         gmail attachment download 18c1234abcd5678 --all
+        gmail attachment download 18c1234abcd5678 doc.pdf --account work@company.com
     """
-    email = get_email(message_id)
+    email = get_email(message_id, account=account)
 
     if not email:
         if is_json_mode():
@@ -140,7 +154,7 @@ def download_attachment_command(
             if Path(output_path).is_dir():
                 output_path = str(Path(output_path) / att.filename)
 
-            success = download_attachment(message_id, att.id, output_path)
+            success = download_attachment(message_id, att.id, output_path, account=account)
             if success:
                 downloaded.append({"filename": att.filename, "path": output_path})
                 if not is_json_mode():
@@ -172,7 +186,7 @@ def download_attachment_command(
             raise typer.Exit(1)
 
         output_path = output if output else attachment.filename
-        success = download_attachment(message_id, attachment.id, output_path)
+        success = download_attachment(message_id, attachment.id, output_path, account=account)
 
         if success:
             if is_json_mode():
