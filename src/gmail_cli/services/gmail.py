@@ -8,6 +8,7 @@ from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -21,8 +22,11 @@ MAX_RETRIES = 3
 BASE_DELAY = 1  # seconds
 
 
-def get_gmail_service():
+def get_gmail_service(account: str | None = None):
     """Get an authenticated Gmail API service.
+
+    Args:
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         Gmail API service object.
@@ -30,28 +34,43 @@ def get_gmail_service():
     Raises:
         Exception: If not authenticated.
     """
-    credentials = get_credentials()
+    credentials = get_credentials(account=account)
     if not credentials:
         raise Exception("Not authenticated. Run 'gmail auth login' first.")
 
     return build("gmail", "v1", credentials=credentials)
 
 
-def _execute_with_retry(request):
+class TokenExpiredError(Exception):
+    """Raised when the OAuth token has expired or been revoked."""
+
+    def __init__(self, account: str | None = None) -> None:
+        self.account = account
+        msg = "Token expired or revoked."
+        if account:
+            msg = f"Token for '{account}' expired or revoked."
+        super().__init__(msg)
+
+
+def _execute_with_retry(request, account: str | None = None):
     """Execute an API request with exponential backoff retry.
 
     Args:
         request: The API request to execute.
+        account: Account email for error messages.
 
     Returns:
         The API response.
 
     Raises:
         HttpError: If all retries fail.
+        TokenExpiredError: If the token has expired or been revoked.
     """
     for attempt in range(MAX_RETRIES):
         try:
             return request.execute()
+        except RefreshError:
+            raise TokenExpiredError(account)
         except HttpError as e:
             if e.resp.status == 429:  # Rate limited
                 delay = BASE_DELAY * (2**attempt)
@@ -59,7 +78,10 @@ def _execute_with_retry(request):
             else:
                 raise
     # Final attempt
-    return request.execute()
+    try:
+        return request.execute()
+    except RefreshError:
+        raise TokenExpiredError(account)
 
 
 def build_search_query(
@@ -120,6 +142,7 @@ def search_emails(
     has_attachment: bool = False,
     limit: int = 20,
     page_token: str | None = None,
+    account: str | None = None,
 ) -> SearchResult:
     """Search emails with filters and pagination.
 
@@ -134,11 +157,12 @@ def search_emails(
         has_attachment: Filter emails with attachments.
         limit: Maximum number of results.
         page_token: Token for pagination.
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         SearchResult with matching emails.
     """
-    service = get_gmail_service()
+    service = get_gmail_service(account=account)
 
     full_query = build_search_query(
         query=query,
@@ -162,7 +186,7 @@ def search_emails(
             pageToken=page_token,
         )
     )
-    response = _execute_with_retry(request)
+    response = _execute_with_retry(request, account=account)
 
     messages = response.get("messages", [])
     next_page_token = response.get("nextPageToken")
@@ -171,7 +195,7 @@ def search_emails(
     # Fetch message details for each result
     emails = []
     for msg in messages:
-        email = get_email_summary(msg["id"])
+        email = get_email_summary(msg["id"], account=account)
         if email:
             emails.append(email)
 
@@ -183,16 +207,17 @@ def search_emails(
     )
 
 
-def get_email_summary(message_id: str) -> Email | None:
+def get_email_summary(message_id: str, account: str | None = None) -> Email | None:
     """Get email summary (metadata only, not full body).
 
     Args:
         message_id: Gmail message ID.
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         Email with metadata, or None if not found.
     """
-    service = get_gmail_service()
+    service = get_gmail_service(account=account)
 
     try:
         request = (
@@ -205,7 +230,7 @@ def get_email_summary(message_id: str) -> Email | None:
                 metadataHeaders=["From", "To", "Subject", "Date"],
             )
         )
-        msg = _execute_with_retry(request)
+        msg = _execute_with_retry(request, account=account)
     except HttpError as e:
         if e.resp.status == 404:
             return None
@@ -235,16 +260,17 @@ def get_email_summary(message_id: str) -> Email | None:
     )
 
 
-def get_email(message_id: str) -> Email | None:
+def get_email(message_id: str, account: str | None = None) -> Email | None:
     """Get full email with body and attachments.
 
     Args:
         message_id: Gmail message ID.
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         Full Email object, or None if not found.
     """
-    service = get_gmail_service()
+    service = get_gmail_service(account=account)
 
     try:
         request = (
@@ -256,7 +282,7 @@ def get_email(message_id: str) -> Email | None:
                 format="full",
             )
         )
-        msg = _execute_with_retry(request)
+        msg = _execute_with_retry(request, account=account)
     except HttpError as e:
         if e.resp.status == 404:
             return None
@@ -364,17 +390,18 @@ def _parse_message_parts(payload: dict, message_id: str) -> tuple[str, str, list
     return body_text, body_html, attachments
 
 
-def get_attachment(message_id: str, attachment_id: str) -> bytes | None:
+def get_attachment(message_id: str, attachment_id: str, account: str | None = None) -> bytes | None:
     """Get attachment data.
 
     Args:
         message_id: Gmail message ID.
         attachment_id: Attachment ID.
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         Attachment data as bytes, or None if not found.
     """
-    service = get_gmail_service()
+    service = get_gmail_service(account=account)
 
     try:
         request = (
@@ -387,25 +414,28 @@ def get_attachment(message_id: str, attachment_id: str) -> bytes | None:
                 id=attachment_id,
             )
         )
-        response = _execute_with_retry(request)
+        response = _execute_with_retry(request, account=account)
         data = response.get("data", "")
         return base64.urlsafe_b64decode(data)
     except HttpError:
         return None
 
 
-def download_attachment(message_id: str, attachment_id: str, output_path: str) -> bool:
+def download_attachment(
+    message_id: str, attachment_id: str, output_path: str, account: str | None = None
+) -> bool:
     """Download attachment to file.
 
     Args:
         message_id: Gmail message ID.
         attachment_id: Attachment ID.
         output_path: Path to save the file.
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         True if download successful, False otherwise.
     """
-    data = get_attachment(message_id, attachment_id)
+    data = get_attachment(message_id, attachment_id, account=account)
 
     if data is None:
         return False
@@ -416,18 +446,21 @@ def download_attachment(message_id: str, attachment_id: str, output_path: str) -
     return True
 
 
-def get_signature() -> str | None:
+def get_signature(account: str | None = None) -> str | None:
     """Get the user's Gmail signature.
+
+    Args:
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         The signature HTML/text, or None if not set.
     """
-    service = get_gmail_service()
+    service = get_gmail_service(account=account)
 
     try:
         # Get send-as settings (includes signature)
         request = service.users().settings().sendAs().list(userId="me")
-        response = _execute_with_retry(request)
+        response = _execute_with_retry(request, account=account)
 
         send_as_list = response.get("sendAs", [])
         for send_as in send_as_list:
@@ -587,11 +620,12 @@ class SendError(Exception):
         super().__init__(message)
 
 
-def send_email(message: dict) -> dict:
+def send_email(message: dict, account: str | None = None) -> dict:
     """Send an email message.
 
     Args:
         message: Message dict from compose_email or compose_reply.
+        account: Account email to use. If None, uses resolved account.
 
     Returns:
         API response with message ID.
@@ -599,11 +633,11 @@ def send_email(message: dict) -> dict:
     Raises:
         SendError: If sending fails.
     """
-    service = get_gmail_service()
+    service = get_gmail_service(account=account)
 
     try:
         request = service.users().messages().send(userId="me", body=message)
-        return _execute_with_retry(request)
+        return _execute_with_retry(request, account=account)
     except HttpError as e:
         error_msg = str(e)
         if e.resp.status == 400:

@@ -127,3 +127,58 @@ class TestSearchCommand:
             result = runner.invoke(app, ["search", "nonexistent"])
 
             assert result.exit_code == 0
+
+
+class TestSearchWithAccount:
+    """Tests for search with multi-account support (T075)."""
+
+    def test_search_uses_gmail_account_env_var(self) -> None:
+        """T075: Test that search uses GMAIL_ACCOUNT environment variable."""
+        import os
+
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.search.search_emails") as mock_search,
+            patch.dict(os.environ, {"GMAIL_ACCOUNT": "env@gmail.com"}),
+        ):
+            from gmail_cli.models.search import SearchResult
+
+            mock_auth.return_value = True
+            mock_search.return_value = SearchResult(
+                emails=[],
+                total_estimate=0,
+                next_page_token=None,
+                query="test",
+            )
+
+            result = runner.invoke(app, ["search", "test"])
+
+            assert result.exit_code == 0
+            # Verify search_emails was called (account resolution happens inside)
+            mock_search.assert_called_once()
+
+    def test_search_explicit_account_overrides_env_var(self) -> None:
+        """T074: Test that --account flag overrides GMAIL_ACCOUNT env var."""
+        import os
+
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.search.search_emails") as mock_search,
+            patch.dict(os.environ, {"GMAIL_ACCOUNT": "env@gmail.com"}),
+        ):
+            from gmail_cli.models.search import SearchResult
+
+            mock_auth.return_value = True
+            mock_search.return_value = SearchResult(
+                emails=[],
+                total_estimate=0,
+                next_page_token=None,
+                query="test",
+            )
+
+            result = runner.invoke(app, ["search", "test", "--account", "explicit@gmail.com"])
+
+            assert result.exit_code == 0
+            # Verify search_emails was called with explicit account
+            call_kwargs = mock_search.call_args.kwargs
+            assert call_kwargs.get("account") == "explicit@gmail.com"

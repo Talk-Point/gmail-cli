@@ -24,6 +24,16 @@ from gmail_cli.utils.output import (
     print_success,
 )
 
+# Account option type
+AccountOption = Annotated[
+    str | None,
+    typer.Option(
+        "--account",
+        "-A",
+        help="Account email to use. Defaults to the default account.",
+    ),
+]
+
 
 @require_auth
 def send_command(
@@ -89,6 +99,7 @@ def send_command(
             help="Append your Gmail signature to the message.",
         ),
     ] = False,
+    account: AccountOption = None,
 ) -> None:
     """Send a new email.
 
@@ -96,6 +107,7 @@ def send_command(
         gmail send --to recipient@example.com --subject "Hello" --body "Hi there!"
         gmail send --to a@x.com --to b@x.com --subject "Test" --body-file message.txt
         gmail send --to x@x.com --subject "Report" --body "See attached" --attach report.pdf
+        gmail send --to x@x.com --subject "Work" --body "From work" --account work@company.com
     """
     # Get body content
     if body_file:
@@ -119,7 +131,7 @@ def send_command(
     # Prepare HTML body if signature requested
     html_body = None
     if signature:
-        sig = get_signature()
+        sig = get_signature(account=account)
         if sig:
             # Plain text version: convert HTML signature to text
             sig_text = html_to_text(sig)
@@ -143,7 +155,7 @@ def send_command(
 
     # Send
     try:
-        result = send_email(message)
+        result = send_email(message, account=account)
         if is_json_mode():
             print_json(
                 {
@@ -220,6 +232,7 @@ def reply_command(
             help="Append your Gmail signature to the reply.",
         ),
     ] = False,
+    account: AccountOption = None,
 ) -> None:
     """Reply to an email.
 
@@ -229,9 +242,10 @@ def reply_command(
         gmail reply 18c1234abcd5678 --all --body "Thanks everyone!"
         gmail reply 18c1234abcd5678 --body "Danke!" --signature
         gmail reply 18c1234abcd5678 --body "Info" --cc support@example.com
+        gmail reply 18c1234abcd5678 --body "Reply" --account work@company.com
     """
     # Get original email
-    email = get_email(message_id)
+    email = get_email(message_id, account=account)
 
     if not email:
         if is_json_mode():
@@ -262,7 +276,7 @@ def reply_command(
     # Prepare HTML body if signature requested
     html_body = None
     if signature:
-        sig = get_signature()
+        sig = get_signature(account=account)
         if sig:
             # Plain text version: convert HTML signature to text
             sig_text = html_to_text(sig)
@@ -317,7 +331,7 @@ def reply_command(
 
     # Send
     try:
-        result = send_email(message)
+        result = send_email(message, account=account)
         if is_json_mode():
             print_json(
                 {

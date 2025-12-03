@@ -85,6 +85,52 @@ class TestAttachmentList:
 
             assert result.exit_code == 0
 
+    def test_attachment_list_email_not_found(self) -> None:
+        """Test error when email not found."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get,
+        ):
+            mock_auth.return_value = True
+            mock_get.return_value = None
+
+            result = runner.invoke(app, ["attachment", "list", "nonexistent"])
+
+            assert result.exit_code == 1
+            assert "nicht gefunden" in result.output
+
+    def test_attachment_list_json_output(self) -> None:
+        """Test attachment list with JSON output."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get,
+        ):
+            mock_auth.return_value = True
+            mock_get.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Test Email",
+                sender="sender@example.com",
+                recipients=["recipient@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                attachments=[
+                    Attachment(
+                        id="att1",
+                        message_id="msg123",
+                        filename="document.pdf",
+                        mime_type="application/pdf",
+                        size=1024,
+                    ),
+                ],
+            )
+
+            result = runner.invoke(app, ["--json", "attachment", "list", "msg123"])
+
+            assert result.exit_code == 0
+            assert '"attachments"' in result.output
+            assert '"filename": "document.pdf"' in result.output
+
 
 class TestAttachmentDownload:
     """Tests for gmail attachment download command."""
@@ -163,3 +209,183 @@ class TestAttachmentDownload:
             result = runner.invoke(app, ["attachment", "download", "msg123", "nonexistent.pdf"])
 
             assert result.exit_code == 1
+
+    def test_attachment_download_email_not_found(self) -> None:
+        """Test error when email not found for download."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get_email,
+        ):
+            mock_auth.return_value = True
+            mock_get_email.return_value = None
+
+            result = runner.invoke(app, ["attachment", "download", "nonexistent", "file.pdf"])
+
+            assert result.exit_code == 1
+            assert "nicht gefunden" in result.output
+
+    def test_attachment_download_no_attachments(self) -> None:
+        """Test error when email has no attachments."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get_email,
+        ):
+            mock_auth.return_value = True
+            mock_get_email.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Test Email",
+                sender="sender@example.com",
+                recipients=["recipient@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                attachments=[],
+            )
+
+            result = runner.invoke(app, ["attachment", "download", "msg123", "file.pdf"])
+
+            assert result.exit_code == 1
+
+    def test_attachment_download_specific_not_found(self) -> None:
+        """Test error when specific attachment not found but others exist."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get_email,
+        ):
+            mock_auth.return_value = True
+            mock_get_email.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Test Email",
+                sender="sender@example.com",
+                recipients=["recipient@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                attachments=[
+                    Attachment(
+                        id="att1",
+                        message_id="msg123",
+                        filename="existing.pdf",
+                        mime_type="application/pdf",
+                        size=1024,
+                    ),
+                ],
+            )
+
+            result = runner.invoke(app, ["attachment", "download", "msg123", "nonexistent.pdf"])
+
+            assert result.exit_code == 1
+            assert "nicht gefunden" in result.output
+            assert "existing.pdf" in result.output  # Should show available attachments
+
+    def test_attachment_download_all(self) -> None:
+        """Test downloading all attachments."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get_email,
+            patch("gmail_cli.cli.attachment.download_attachment") as mock_download,
+        ):
+            mock_auth.return_value = True
+            mock_get_email.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Test Email",
+                sender="sender@example.com",
+                recipients=["recipient@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                attachments=[
+                    Attachment(
+                        id="att1",
+                        message_id="msg123",
+                        filename="document.pdf",
+                        mime_type="application/pdf",
+                        size=1024,
+                    ),
+                    Attachment(
+                        id="att2",
+                        message_id="msg123",
+                        filename="image.png",
+                        mime_type="image/png",
+                        size=2048,
+                    ),
+                ],
+            )
+            mock_download.return_value = True
+
+            result = runner.invoke(
+                app,
+                ["attachment", "download", "msg123", "ignored", "--all"],
+            )
+
+            assert result.exit_code == 0
+            assert mock_download.call_count == 2
+
+    def test_attachment_download_failed(self) -> None:
+        """Test error when download fails."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get_email,
+            patch("gmail_cli.cli.attachment.download_attachment") as mock_download,
+        ):
+            mock_auth.return_value = True
+            mock_get_email.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Test Email",
+                sender="sender@example.com",
+                recipients=["recipient@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                attachments=[
+                    Attachment(
+                        id="att1",
+                        message_id="msg123",
+                        filename="document.pdf",
+                        mime_type="application/pdf",
+                        size=1024,
+                    ),
+                ],
+            )
+            mock_download.return_value = False
+
+            result = runner.invoke(app, ["attachment", "download", "msg123", "document.pdf"])
+
+            assert result.exit_code == 1
+            assert "fehlgeschlagen" in result.output
+
+    def test_attachment_download_json_output(self) -> None:
+        """Test download with JSON output."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.attachment.get_email") as mock_get_email,
+            patch("gmail_cli.cli.attachment.download_attachment") as mock_download,
+        ):
+            mock_auth.return_value = True
+            mock_get_email.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Test Email",
+                sender="sender@example.com",
+                recipients=["recipient@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                attachments=[
+                    Attachment(
+                        id="att1",
+                        message_id="msg123",
+                        filename="document.pdf",
+                        mime_type="application/pdf",
+                        size=1024,
+                    ),
+                ],
+            )
+            mock_download.return_value = True
+
+            result = runner.invoke(
+                app,
+                ["--json", "attachment", "download", "msg123", "document.pdf"],
+            )
+
+            assert result.exit_code == 0
+            assert '"downloaded": true' in result.output

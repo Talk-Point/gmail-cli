@@ -5,6 +5,7 @@ from typing import Annotated
 import typer
 
 from gmail_cli import __version__
+from gmail_cli.cli.accounts import accounts_app
 from gmail_cli.cli.attachment import attachment_app
 from gmail_cli.cli.auth import auth_app
 from gmail_cli.cli.read import read_command
@@ -51,6 +52,7 @@ def main(
 
 
 # Register subcommands
+app.add_typer(accounts_app, name="accounts")
 app.add_typer(auth_app, name="auth")
 app.add_typer(attachment_app, name="attachment")
 app.command("search")(search_command)
