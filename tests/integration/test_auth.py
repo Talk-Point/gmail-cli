@@ -121,7 +121,7 @@ class TestMultiAccountLogin:
         with (
             patch("gmail_cli.cli.auth.run_oauth_flow") as mock_oauth,
             patch("gmail_cli.cli.auth.has_credentials") as mock_has,
-            patch("gmail_cli.services.credentials.list_accounts") as mock_list,
+            patch("gmail_cli.cli.auth.list_accounts") as mock_list,
         ):
             mock_has.return_value = False
             mock_list.return_value = []  # No accounts yet
@@ -141,8 +141,8 @@ class TestMultiAccountLogin:
         with (
             patch("gmail_cli.cli.auth.run_oauth_flow") as mock_oauth,
             patch("gmail_cli.cli.auth.has_credentials") as mock_has,
-            patch("gmail_cli.services.credentials.list_accounts") as mock_list,
-            patch("gmail_cli.services.credentials.get_default_account") as mock_default,
+            patch("gmail_cli.cli.auth.list_accounts") as mock_list,
+            patch("gmail_cli.cli.auth.get_default_account") as mock_default,
         ):
             mock_has.return_value = False
             mock_list.return_value = ["first@gmail.com"]  # One account already
@@ -163,7 +163,7 @@ class TestMultiAccountLogin:
             patch("gmail_cli.cli.auth.has_credentials") as mock_has,
             patch("gmail_cli.services.auth.migrate_legacy_credentials") as mock_migrate,
             patch("gmail_cli.cli.auth.run_oauth_flow") as mock_oauth,
-            patch("gmail_cli.services.credentials.list_accounts") as mock_list,
+            patch("gmail_cli.cli.auth.list_accounts") as mock_list,
         ):
             mock_has.return_value = False
             mock_migrate.return_value = True  # Migration occurred
