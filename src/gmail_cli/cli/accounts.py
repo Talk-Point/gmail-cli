@@ -37,9 +37,7 @@ def list_command() -> None:
     if is_json_mode():
         print_json(
             {
-                "accounts": [
-                    {"email": acc, "is_default": acc == default} for acc in accounts
-                ],
+                "accounts": [{"email": acc, "is_default": acc == default} for acc in accounts],
                 "default": default,
             }
         )
