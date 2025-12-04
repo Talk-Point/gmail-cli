@@ -8,8 +8,9 @@ A powerful command-line interface for Gmail, inspired by GitHub's `gh` CLI. Mana
 - **Authentication** - Secure OAuth 2.0 login with credentials stored in your system's keyring
 - **Search** - Find emails with powerful filters (sender, recipient, date, labels, attachments)
 - **Read** - View full email content with automatic HTML-to-text conversion
-- **Send** - Compose and send emails with attachments
+- **Send** - Compose and send emails with attachments and Markdown formatting
 - **Reply** - Reply to emails (single or reply-all) within the same thread
+- **Markdown Support** - Email bodies are automatically converted from Markdown to HTML
 - **Attachments** - List and download email attachments
 - **JSON Output** - Machine-readable output for scripting and automation
 
@@ -199,9 +200,18 @@ gmail read 18c1234abcd5678 --account work@company.com
 
 ### Send Emails
 
+Email bodies support **Markdown formatting** by default. Your Markdown is automatically converted to HTML with GitHub-Flavored Markdown support (bold, italic, tables, code blocks, task lists, etc.).
+
 ```bash
-# Basic send
+# Basic send (Markdown enabled by default)
 gmail send --to recipient@example.com --subject "Hello" --body "Message content"
+
+# With Markdown formatting
+gmail send --to recipient@example.com --subject "Update" \
+    --body "## Status Report\n\n**Progress:** 80% complete\n\n- [x] Task 1\n- [ ] Task 2"
+
+# Send as plain text (disable Markdown)
+gmail send --to recipient@example.com --subject "Hello" --body "**not bold**" --plain
 
 # Multiple recipients
 gmail send --to a@example.com --to b@example.com --subject "Team Update" --body "..."
@@ -210,8 +220,8 @@ gmail send --to a@example.com --to b@example.com --subject "Team Update" --body 
 gmail send --to main@example.com --cc copy@example.com --bcc hidden@example.com \
     --subject "Report" --body "See attached"
 
-# Body from file
-gmail send --to recipient@example.com --subject "Report" --body-file report.txt
+# Body from file (Markdown also supported)
+gmail send --to recipient@example.com --subject "Report" --body-file report.md
 
 # With attachments
 gmail send --to recipient@example.com --subject "Documents" \
@@ -232,9 +242,12 @@ gmail send --to recipient@example.com --subject "Hello" --body "Best regards" --
 | `--bcc` | | BCC recipient (repeatable) |
 | `--attach` | `-a` | File to attach (repeatable) |
 | `--signature` | `--sig` | Append your Gmail signature |
+| `--plain` | | Disable Markdown, send as plain text |
 | `--account` | `-A` | Use specific account |
 
 ### Reply to Emails
+
+Replies also support Markdown formatting by default.
 
 ```bash
 # Reply to sender
@@ -251,6 +264,9 @@ gmail reply 18c1234abcd5678 --body-file response.txt
 
 # Reply with Gmail signature
 gmail reply 18c1234abcd5678 --body "Thanks!" --signature
+
+# Reply as plain text (no Markdown)
+gmail reply 18c1234abcd5678 --body "**literal asterisks**" --plain
 ```
 
 **Reply Options:**
@@ -261,7 +277,31 @@ gmail reply 18c1234abcd5678 --body "Thanks!" --signature
 | `--all` | `-a` | Reply to all recipients |
 | `--attach` | | File to attach (repeatable) |
 | `--signature` | `--sig` | Append your Gmail signature |
+| `--plain` | | Disable Markdown, send as plain text |
 | `--account` | `-A` | Use specific account |
+
+### Markdown Support
+
+Email bodies are processed as **GitHub-Flavored Markdown** by default. Supported formatting:
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Bold | `**text**` | **bold** |
+| Italic | `*text*` | *italic* |
+| Strikethrough | `~~text~~` | ~~deleted~~ |
+| Headers | `# H1` to `###### H6` | Headings |
+| Code (inline) | `` `code` `` | `inline code` |
+| Code blocks | ` ```python ... ``` ` | Syntax highlighted |
+| Tables | `\| A \| B \|` | Formatted tables |
+| Task lists | `- [x] Done` | Checkboxes |
+| Blockquotes | `> quote` | Quoted text |
+| Lists | `- item` or `1. item` | Bulleted/numbered |
+| Links | `[text](url)` | Clickable links |
+| Images | `![alt](url)` | Embedded images |
+
+The HTML output uses **inline CSS** for maximum email client compatibility (Gmail, Outlook, Apple Mail).
+
+Use `--plain` to disable Markdown processing and send literal text.
 
 ### Manage Attachments
 
@@ -382,7 +422,8 @@ gmail-cli/
 │   │   └── search.py        # SearchResult model
 │   └── utils/
 │       ├── output.py        # Rich formatting, JSON output
-│       └── html.py          # HTML-to-text conversion
+│       ├── html.py          # HTML-to-text conversion
+│       └── markdown.py      # Markdown-to-HTML conversion
 ├── tests/
 │   ├── conftest.py          # Pytest fixtures, Gmail API mocks
 │   ├── unit/                # Unit tests
@@ -400,6 +441,8 @@ gmail-cli/
 - **[google-auth-oauthlib](https://google-auth-oauthlib.readthedocs.io/)** - OAuth 2.0 flow
 - **[keyring](https://keyring.readthedocs.io/)** - Secure credential storage
 - **[html2text](https://github.com/Alir3z4/html2text)** - HTML-to-text conversion
+- **[markdown](https://python-markdown.github.io/)** - Markdown to HTML conversion
+- **[pymdown-extensions](https://facelessuser.github.io/pymdown-extensions/)** - GFM extensions (strikethrough, task lists)
 - **[uv](https://github.com/astral-sh/uv)** - Fast Python package manager
 - **[Ruff](https://docs.astral.sh/ruff/)** - Linting and formatting
 
