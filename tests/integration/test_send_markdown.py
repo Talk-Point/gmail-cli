@@ -116,13 +116,15 @@ def hello():
             assert "<code" in call_kwargs["html_body"]
 
     def test_send_plain_no_html_conversion(self) -> None:
-        """With --plain flag, Markdown is NOT converted to HTML."""
+        """With --plain flag and --no-signature, no HTML is generated."""
         with (
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -137,13 +139,14 @@ def hello():
                     "--body",
                     "**not bold**",
                     "--plain",
+                    "--no-signature",
                 ],
             )
 
             assert result.exit_code == 0
             mock_compose.assert_called_once()
             call_kwargs = mock_compose.call_args[1]
-            # html_body should be None in plain mode
+            # html_body should be None in plain mode with no signature
             assert call_kwargs.get("html_body") is None
 
     def test_send_with_signature_combines_html(self) -> None:
@@ -268,14 +271,16 @@ class TestReplyWithMarkdown:
             assert "signature" in call_kwargs["html_body"].lower()
 
     def test_reply_plain_no_html_conversion(self) -> None:
-        """Reply with --plain does NOT convert Markdown."""
+        """Reply with --plain and --no-signature does NOT generate HTML."""
         with (
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_reply") as mock_compose,
             patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_get.return_value = self._create_mock_email()
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
@@ -288,13 +293,14 @@ class TestReplyWithMarkdown:
                     "--body",
                     "**not bold**",
                     "--plain",
+                    "--no-signature",
                 ],
             )
 
             assert result.exit_code == 0
             mock_compose.assert_called_once()
             call_kwargs = mock_compose.call_args[1]
-            # html_body should be None in plain mode
+            # html_body should be None in plain mode with no signature
             assert call_kwargs.get("html_body") is None
 
 

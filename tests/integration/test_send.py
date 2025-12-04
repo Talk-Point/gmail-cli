@@ -33,8 +33,10 @@ class TestSendCommand:
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -66,8 +68,10 @@ class TestSendCommand:
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.side_effect = SendError(
                 "Ungültige E-Mail-Adresse oder Nachrichtenformat", 400
@@ -103,8 +107,10 @@ class TestSendCommand:
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -185,8 +191,10 @@ class TestSendCommand:
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -206,6 +214,135 @@ class TestSendCommand:
 
             assert result.exit_code == 0
             assert '"message_id": "sent123"' in result.output
+
+    def test_send_default_includes_signature(self) -> None:
+        """Test that send includes signature by default (no flag needed)."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = "<div>My Signature</div>"
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi there",
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Signature should be included by default
+            mock_sig.assert_called_once()
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "--" in call_kwargs["body"]  # Signature separator
+
+    def test_send_no_signature_excludes_signature(self) -> None:
+        """Test that --no-signature flag excludes signature."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = "<div>My Signature</div>"
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi there",
+                    "--no-signature",
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Signature should NOT be fetched when --no-signature is used
+            mock_sig.assert_not_called()
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "--" not in call_kwargs["body"]  # No signature separator
+
+    def test_send_no_signature_when_none_configured(self) -> None:
+        """Test that send works gracefully when no signature is configured."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi there",
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Should still work without error
+            call_kwargs = mock_compose.call_args.kwargs
+            assert call_kwargs["body"] == "Hi there"  # No signature added
+
+    def test_send_with_sig_shorthand(self) -> None:
+        """Test that --sig shorthand works (backwards compatibility)."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = "<div>My Signature</div>"
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi there",
+                    "--sig",
+                ],
+            )
+
+            assert result.exit_code == 0
+            # Signature should be included
+            mock_sig.assert_called_once()
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "--" in call_kwargs["body"]  # Signature separator
 
 
 class TestReplyCommand:
@@ -387,3 +524,75 @@ class TestReplyCommand:
             # Should contain both user-specified and original CC
             assert "new-cc@example.com" in call_kwargs["cc"]
             assert "original-cc@example.com" in call_kwargs["cc"]
+
+    def test_reply_default_includes_signature(self) -> None:
+        """Test that reply includes signature by default (no flag needed)."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = "<div>My Signature</div>"
+            mock_get.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Original Subject",
+                sender="sender@example.com",
+                recipients=["me@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                message_id="<original@gmail.com>",
+                references=[],
+            )
+            mock_compose.return_value = {"raw": "test", "threadId": "thread123"}
+            mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                ["reply", "msg123", "--body", "Thanks!"],
+            )
+
+            assert result.exit_code == 0
+            # Signature should be included by default
+            mock_sig.assert_called_once()
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "--" in call_kwargs["body"]  # Signature separator
+
+    def test_reply_no_signature_excludes_signature(self) -> None:
+        """Test that reply --no-signature excludes signature."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_sig.return_value = "<div>My Signature</div>"
+            mock_get.return_value = Email(
+                id="msg123",
+                thread_id="thread123",
+                subject="Original Subject",
+                sender="sender@example.com",
+                recipients=["me@example.com"],
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                snippet="Test...",
+                message_id="<original@gmail.com>",
+                references=[],
+            )
+            mock_compose.return_value = {"raw": "test", "threadId": "thread123"}
+            mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                ["reply", "msg123", "--body", "Thanks!", "--no-signature"],
+            )
+
+            assert result.exit_code == 0
+            # Signature should NOT be fetched when --no-signature is used
+            mock_sig.assert_not_called()
+            call_kwargs = mock_compose.call_args.kwargs
+            assert "--" not in call_kwargs["body"]  # No signature separator

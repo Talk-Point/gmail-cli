@@ -202,13 +202,18 @@ gmail read 18c1234abcd5678 --account work@company.com
 
 Email bodies support **Markdown formatting** by default. Your Markdown is automatically converted to HTML with GitHub-Flavored Markdown support (bold, italic, tables, code blocks, task lists, etc.).
 
+Your **Gmail signature is included by default** - use `--no-signature` to exclude it.
+
 ```bash
-# Basic send (Markdown enabled by default)
+# Basic send (Markdown + signature enabled by default)
 gmail send --to recipient@example.com --subject "Hello" --body "Message content"
 
 # With Markdown formatting
 gmail send --to recipient@example.com --subject "Update" \
     --body "## Status Report\n\n**Progress:** 80% complete\n\n- [x] Task 1\n- [ ] Task 2"
+
+# Send without signature
+gmail send --to recipient@example.com --subject "Quick note" --body "Hi!" --no-signature
 
 # Send as plain text (disable Markdown)
 gmail send --to recipient@example.com --subject "Hello" --body "**not bold**" --plain
@@ -226,9 +231,6 @@ gmail send --to recipient@example.com --subject "Report" --body-file report.md
 # With attachments
 gmail send --to recipient@example.com --subject "Documents" \
     --body "Please find attached" --attach document.pdf --attach image.png
-
-# With Gmail signature
-gmail send --to recipient@example.com --subject "Hello" --body "Best regards" --signature
 ```
 
 **Send Options:**
@@ -241,16 +243,16 @@ gmail send --to recipient@example.com --subject "Hello" --body "Best regards" --
 | `--cc` | | CC recipient (repeatable) |
 | `--bcc` | | BCC recipient (repeatable) |
 | `--attach` | `-a` | File to attach (repeatable) |
-| `--signature` | `--sig` | Append your Gmail signature |
+| `--signature/--no-signature` | `--sig/--no-sig` | Include/exclude Gmail signature (default: enabled) |
 | `--plain` | | Disable Markdown, send as plain text |
 | `--account` | `-A` | Use specific account |
 
 ### Reply to Emails
 
-Replies also support Markdown formatting by default.
+Replies also support Markdown formatting by default, and your **Gmail signature is included by default**.
 
 ```bash
-# Reply to sender
+# Reply to sender (signature included by default)
 gmail reply 18c1234abcd5678 --body "Thanks for your message!"
 
 # Reply to all recipients
@@ -262,8 +264,8 @@ gmail reply 18c1234abcd5678 --body "Here's the file" --attach document.pdf
 # Reply body from file
 gmail reply 18c1234abcd5678 --body-file response.txt
 
-# Reply with Gmail signature
-gmail reply 18c1234abcd5678 --body "Thanks!" --signature
+# Reply without signature
+gmail reply 18c1234abcd5678 --body "Quick reply" --no-signature
 
 # Reply as plain text (no Markdown)
 gmail reply 18c1234abcd5678 --body "**literal asterisks**" --plain
@@ -276,7 +278,7 @@ gmail reply 18c1234abcd5678 --body "**literal asterisks**" --plain
 | `--body-file` | `-f` | Read body from file |
 | `--all` | `-a` | Reply to all recipients |
 | `--attach` | | File to attach (repeatable) |
-| `--signature` | `--sig` | Append your Gmail signature |
+| `--signature/--no-signature` | `--sig/--no-sig` | Include/exclude Gmail signature (default: enabled) |
 | `--plain` | | Disable Markdown, send as plain text |
 | `--account` | `-A` | Use specific account |
 

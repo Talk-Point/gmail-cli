@@ -95,11 +95,11 @@ def send_command(
     signature: Annotated[
         bool,
         typer.Option(
-            "--signature",
-            "--sig",
-            help="Append your Gmail signature to the message.",
+            "--signature/--no-signature",
+            "--sig/--no-sig",
+            help="Include Gmail signature (default: enabled).",
         ),
-    ] = False,
+    ] = True,
     plain: Annotated[
         bool,
         typer.Option(
@@ -111,8 +111,11 @@ def send_command(
 ) -> None:
     """Send a new email.
 
-    By default, the body is processed as Markdown and converted to HTML.
-    Use --plain to send as plain text without conversion.
+    By default, the body is processed as Markdown and converted to HTML,
+    and your Gmail signature is automatically appended.
+
+    Use --no-signature to exclude the signature.
+    Use --plain to send as plain text without Markdown conversion.
 
     Examples:
         gmail send --to recipient@example.com --subject "Hello" --body "Hi there!"
@@ -120,6 +123,7 @@ def send_command(
         gmail send --to x@x.com --subject "Report" --body "See attached" --attach report.pdf
         gmail send --to x@x.com --subject "Work" --body "From work" --account work@company.com
         gmail send --to x@x.com --subject "Test" --body "**Bold**" --plain
+        gmail send --to x@x.com --subject "Quick note" --body "Hi" --no-signature
     """
     # Get body content
     if body_file:
@@ -247,11 +251,11 @@ def reply_command(
     signature: Annotated[
         bool,
         typer.Option(
-            "--signature",
-            "--sig",
-            help="Append your Gmail signature to the reply.",
+            "--signature/--no-signature",
+            "--sig/--no-sig",
+            help="Include Gmail signature (default: enabled).",
         ),
-    ] = False,
+    ] = True,
     plain: Annotated[
         bool,
         typer.Option(
@@ -263,17 +267,20 @@ def reply_command(
 ) -> None:
     """Reply to an email.
 
-    By default, the body is processed as Markdown and converted to HTML.
-    Use --plain to send as plain text without conversion.
+    By default, the body is processed as Markdown and converted to HTML,
+    and your Gmail signature is automatically appended.
+
+    Use --no-signature to exclude the signature.
+    Use --plain to send as plain text without Markdown conversion.
 
     Examples:
         gmail reply 18c1234abcd5678 --body "Thanks for your message!"
         gmail reply 18c1234abcd5678 --body-file reply.txt
         gmail reply 18c1234abcd5678 --all --body "Thanks everyone!"
-        gmail reply 18c1234abcd5678 --body "Danke!" --signature
         gmail reply 18c1234abcd5678 --body "Info" --cc support@example.com
         gmail reply 18c1234abcd5678 --body "Reply" --account work@company.com
         gmail reply 18c1234abcd5678 --body "**Bold reply**" --plain
+        gmail reply 18c1234abcd5678 --body "Quick reply" --no-signature
     """
     # Get original email
     email = get_email(message_id, account=account)
