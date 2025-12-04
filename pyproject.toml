@@ -1,6 +1,6 @@
 [project]
 name = "gmail-cli"
-version = "0.3.0"
+version = "0.4.0"
 description = "A command-line interface for Gmail, similar to gh CLI"
 readme = "README.md"
 license = { text = "MIT" }
@@ -26,6 +26,8 @@ dependencies = [
     "google-auth-oauthlib>=1.0.0",
     "keyring>=24.0.0",
     "html2text>=2024.0.0",
+    "markdown>=3.5.0",
+    "pymdown-extensions>=10.0",
 ]
 
 [project.optional-dependencies]
