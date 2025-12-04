@@ -4,6 +4,16 @@ import re
 
 import markdown
 
+# Style constants for email-safe HTML
+_EMAIL_WRAPPER_STYLE = (
+    "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', "
+    "Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;"
+)
+_INLINE_CODE_STYLE = (
+    "background-color: #f6f8fa; padding: 0.2em 0.4em; border-radius: 3px; "
+    "font-family: ui-monospace, SFMono-Regular, monospace; font-size: 85%;"
+)
+
 
 def markdown_to_html(markdown_text: str) -> str:
     """Convert Markdown text to HTML with email-safe styling.
@@ -108,10 +118,11 @@ def _add_code_styles(html: str) -> str:
     )
 
     # Style inline code (not inside pre)
-    # First, mark code blocks to preserve them
+    # We already styled code inside pre above, so now style remaining <code> tags
+    # that don't have a style attribute yet (these are inline code)
     html = re.sub(
-        r"<code(?![^>]*style=)([^>]*)>(?!.*</pre>)",
-        r'<code style="background-color: #f6f8fa; padding: 0.2em 0.4em; border-radius: 3px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 85%;"\1>',
+        r"<code(?![^>]*style=)([^>]*)>",
+        rf'<code style="{_INLINE_CODE_STYLE}"\1>',
         html,
     )
 
@@ -143,6 +154,6 @@ def wrap_html_for_email(html_body: str) -> str:
         Wraps in <div> with font-family for consistent rendering.
     """
     if not html_body:
-        return "<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;\"></div>"
+        return f'<div style="{_EMAIL_WRAPPER_STYLE}"></div>'
 
-    return f"<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;\">{html_body}</div>"
+    return f'<div style="{_EMAIL_WRAPPER_STYLE}">{html_body}</div>'
