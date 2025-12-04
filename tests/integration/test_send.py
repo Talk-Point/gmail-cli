@@ -367,8 +367,10 @@ class TestReplyCommand:
             patch("gmail_cli.cli.send.get_email") as mock_get,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_get.return_value = Email(
                 id="msg123",
                 thread_id="thread123",
@@ -413,8 +415,10 @@ class TestReplyCommand:
             patch("gmail_cli.cli.send.get_email") as mock_get,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_get.return_value = Email(
                 id="msg123",
                 thread_id="thread123",
@@ -447,8 +451,10 @@ class TestReplyCommand:
             patch("gmail_cli.cli.send.get_email") as mock_get,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_get.return_value = Email(
                 id="msg123",
                 thread_id="thread123",
@@ -489,8 +495,10 @@ class TestReplyCommand:
             patch("gmail_cli.cli.send.get_email") as mock_get,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_reply") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_get.return_value = Email(
                 id="msg123",
                 thread_id="thread123",

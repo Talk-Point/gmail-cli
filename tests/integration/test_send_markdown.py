@@ -20,8 +20,10 @@ class TestSendWithMarkdown:
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -55,8 +57,10 @@ class TestSendWithMarkdown:
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -90,8 +94,10 @@ def hello():
             patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
 
@@ -214,8 +220,10 @@ class TestReplyWithMarkdown:
             patch("gmail_cli.cli.send.send_email") as mock_send,
             patch("gmail_cli.cli.send.compose_reply") as mock_compose,
             patch("gmail_cli.cli.send.get_email") as mock_get,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
         ):
             mock_auth.return_value = True
+            mock_sig.return_value = None  # No signature configured
             mock_get.return_value = self._create_mock_email()
             mock_compose.return_value = {"raw": "test"}
             mock_send.return_value = {"id": "reply123", "threadId": "thread123"}
