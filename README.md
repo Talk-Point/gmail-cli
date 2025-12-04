@@ -11,6 +11,7 @@ A powerful command-line interface for Gmail, inspired by GitHub's `gh` CLI. Mana
 - **Send** - Compose and send emails with attachments and Markdown formatting
 - **Reply** - Reply to emails (single or reply-all) within the same thread
 - **Markdown Support** - Email bodies are automatically converted from Markdown to HTML
+- **Automatic Signature** - Gmail signature is included by default (use `--no-signature` to exclude)
 - **Attachments** - List and download email attachments
 - **JSON Output** - Machine-readable output for scripting and automation
 
@@ -305,6 +306,35 @@ The HTML output uses **inline CSS** for maximum email client compatibility (Gmai
 
 Use `--plain` to disable Markdown processing and send literal text.
 
+### Signature
+
+Your Gmail signature is **automatically included** in all emails by default. The signature is fetched from your Gmail account settings.
+
+```bash
+# Signature is included by default
+gmail send --to recipient@example.com --subject "Hello" --body "Hi there!"
+
+# Explicitly exclude signature
+gmail send --to recipient@example.com --subject "Quick note" --body "Hi!" --no-signature
+
+# Short form
+gmail send --to recipient@example.com --subject "Quick note" --body "Hi!" --no-sig
+```
+
+**Signature Behavior:**
+
+| Command | Signature |
+|---------|-----------|
+| `gmail send --body "Hi"` | Included (default) |
+| `gmail send --body "Hi" --signature` | Included (explicit) |
+| `gmail send --body "Hi" --no-signature` | Excluded |
+| `gmail reply MSG_ID --body "Thanks"` | Included (default) |
+| `gmail reply MSG_ID --body "Thanks" --no-sig` | Excluded |
+
+**Note:** The signature is fetched from your Gmail account's signature settings. If you haven't configured a signature in Gmail, no signature will be added.
+
+**Changed in v0.5.0:** In earlier versions, signatures were opt-in (required `--signature` flag). Starting with v0.5.0, signatures are included by default. Use `--no-signature` to exclude.
+
 ### Manage Attachments
 
 ```bash
@@ -591,86 +621,6 @@ app.command("yourcommand")(your_command)
 ```
 
 3. Write tests in `tests/integration/test_yourcommand.py`
-
-## Signature Handling
-
-The signature is **enabled by default** for `send` and `reply` commands. This has important implications for testing.
-
-### Signature Flag Behavior
-
-```python
-# In src/gmail_cli/cli/send.py
-signature: Annotated[
-    bool,
-    typer.Option(
-        "--signature/--no-signature",
-        "--sig/--no-sig",
-        help="Include Gmail signature (default: enabled).",
-    ),
-] = True,  # Default is True (signature enabled)
-```
-
-- `gmail send ...` → Signature included (default)
-- `gmail send ... --signature` → Signature included (explicit, same as default)
-- `gmail send ... --no-signature` → Signature excluded
-
-### Testing with Signatures
-
-Since signature is enabled by default, **all tests that call `send` or `reply` must mock `get_signature`** to avoid unexpected behavior:
-
-```python
-from unittest.mock import patch
-from typer.testing import CliRunner
-from gmail_cli.cli.main import app
-
-runner = CliRunner()
-
-def test_send_email():
-    with (
-        patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
-        patch("gmail_cli.cli.send.send_email") as mock_send,
-        patch("gmail_cli.cli.send.compose_email") as mock_compose,
-        patch("gmail_cli.cli.send.get_signature") as mock_sig,  # Required!
-    ):
-        mock_auth.return_value = True
-        mock_sig.return_value = None  # No signature configured
-        mock_compose.return_value = {"raw": "test"}
-        mock_send.return_value = {"id": "123", "threadId": "456"}
-
-        result = runner.invoke(app, ["send", "--to", "x@x.com", "--subject", "Test", "--body", "Hi"])
-        assert result.exit_code == 0
-```
-
-**Important:** If you don't mock `get_signature`, the test will attempt to fetch a real signature from the Gmail API, which may fail or cause unexpected test behavior.
-
-### Testing Signature-Specific Behavior
-
-```python
-# Test that signature is included by default
-def test_send_default_includes_signature():
-    with (
-        patch("gmail_cli.cli.send.get_signature") as mock_sig,
-        # ... other mocks
-    ):
-        mock_sig.return_value = '<div class="signature">My Sig</div>'
-
-        result = runner.invoke(app, ["send", "--to", "x@x.com", "--subject", "Test", "--body", "Hi"])
-
-        mock_sig.assert_called_once()  # Signature was fetched
-        # Check html_body contains signature
-        call_kwargs = mock_compose.call_args[1]
-        assert "signature" in call_kwargs["html_body"].lower()
-
-# Test that --no-signature excludes signature
-def test_send_no_signature_excludes():
-    with (
-        patch("gmail_cli.cli.send.get_signature") as mock_sig,
-        # ... other mocks
-    ):
-        result = runner.invoke(app, ["send", "--to", "x@x.com", "--subject", "Test", "--body", "Hi", "--no-signature"])
-
-        mock_sig.assert_not_called()  # Signature was NOT fetched
-```
 
 ## API Rate Limiting
 
