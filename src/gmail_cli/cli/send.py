@@ -15,6 +15,7 @@ from gmail_cli.services.gmail import (
     send_email,
 )
 from gmail_cli.utils.html import html_to_text
+from gmail_cli.utils.markdown import markdown_to_html, wrap_html_for_email
 from gmail_cli.utils.output import (
     is_json_mode,
     print_error,
@@ -99,15 +100,26 @@ def send_command(
             help="Append your Gmail signature to the message.",
         ),
     ] = False,
+    plain: Annotated[
+        bool,
+        typer.Option(
+            "--plain",
+            help="Disable Markdown processing and send as plain text only.",
+        ),
+    ] = False,
     account: AccountOption = None,
 ) -> None:
     """Send a new email.
+
+    By default, the body is processed as Markdown and converted to HTML.
+    Use --plain to send as plain text without conversion.
 
     Examples:
         gmail send --to recipient@example.com --subject "Hello" --body "Hi there!"
         gmail send --to a@x.com --to b@x.com --subject "Test" --body-file message.txt
         gmail send --to x@x.com --subject "Report" --body "See attached" --attach report.pdf
         gmail send --to x@x.com --subject "Work" --body "From work" --account work@company.com
+        gmail send --to x@x.com --subject "Test" --body "**Bold**" --plain
     """
     # Get body content
     if body_file:
@@ -128,19 +140,27 @@ def send_command(
             print_error("E-Mail-Text erforderlich (--body oder --body-file)")
         raise typer.Exit(1)
 
-    # Prepare HTML body if signature requested
+    # Prepare HTML body: Markdown conversion (default) or plain text
     html_body = None
+    if not plain:
+        # Convert Markdown to HTML (default behavior)
+        html_body = markdown_to_html(body_content)
+        html_body = wrap_html_for_email(html_body)
+
+    # Handle signature
     if signature:
         sig = get_signature(account=account)
         if sig:
-            # Plain text version: convert HTML signature to text
+            # Plain text version: convert HTML signature to text and append
             sig_text = html_to_text(sig)
             body_content = f"{body_content}\n\n--\n{sig_text}"
-            # HTML version: wrap body in HTML and append signature
-            body_html = body.replace("\n", "<br>") if body else ""
-            if body_file:
-                body_html = Path(body_file).read_text().replace("\n", "<br>")
-            html_body = f"<div>{body_html}</div><br><div>--</div>{sig}"
+            # HTML version: append signature to HTML body
+            if html_body:
+                html_body = f"{html_body}<br><div>--</div>{sig}"
+            else:
+                # Plain mode with signature: create minimal HTML for signature
+                body_html = body_content.replace("\n", "<br>")
+                html_body = f"<div>{body_html}</div><br><div>--</div>{sig}"
 
     # Compose message
     message = compose_email(
@@ -232,9 +252,19 @@ def reply_command(
             help="Append your Gmail signature to the reply.",
         ),
     ] = False,
+    plain: Annotated[
+        bool,
+        typer.Option(
+            "--plain",
+            help="Disable Markdown processing and send reply as plain text only.",
+        ),
+    ] = False,
     account: AccountOption = None,
 ) -> None:
     """Reply to an email.
+
+    By default, the body is processed as Markdown and converted to HTML.
+    Use --plain to send as plain text without conversion.
 
     Examples:
         gmail reply 18c1234abcd5678 --body "Thanks for your message!"
@@ -243,6 +273,7 @@ def reply_command(
         gmail reply 18c1234abcd5678 --body "Danke!" --signature
         gmail reply 18c1234abcd5678 --body "Info" --cc support@example.com
         gmail reply 18c1234abcd5678 --body "Reply" --account work@company.com
+        gmail reply 18c1234abcd5678 --body "**Bold reply**" --plain
     """
     # Get original email
     email = get_email(message_id, account=account)
@@ -273,19 +304,27 @@ def reply_command(
             print_error("Antwort-Text erforderlich (--body oder --body-file)")
         raise typer.Exit(1)
 
-    # Prepare HTML body if signature requested
+    # Prepare HTML body: Markdown conversion (default) or plain text
     html_body = None
+    if not plain:
+        # Convert Markdown to HTML (default behavior)
+        html_body = markdown_to_html(body_content)
+        html_body = wrap_html_for_email(html_body)
+
+    # Handle signature
     if signature:
         sig = get_signature(account=account)
         if sig:
-            # Plain text version: convert HTML signature to text
+            # Plain text version: convert HTML signature to text and append
             sig_text = html_to_text(sig)
             body_content = f"{body_content}\n\n--\n{sig_text}"
-            # HTML version: wrap body in HTML and append signature
-            body_html = body.replace("\n", "<br>") if body else ""
-            if body_file:
-                body_html = Path(body_file).read_text().replace("\n", "<br>")
-            html_body = f"<div>{body_html}</div><br><div>--</div>{sig}"
+            # HTML version: append signature to HTML body
+            if html_body:
+                html_body = f"{html_body}<br><div>--</div>{sig}"
+            else:
+                # Plain mode with signature: create minimal HTML for signature
+                body_html = body_content.replace("\n", "<br>")
+                html_body = f"<div>{body_html}</div><br><div>--</div>{sig}"
 
     # Determine recipients
     # Extract email from "Name <email>" format
