@@ -96,7 +96,7 @@ def _add_code_styles(html: str) -> str:
     # Style fenced code blocks (pre > code)
     html = re.sub(
         r"<pre>",
-        '<pre style="background-color: #f6f8fa; border-radius: 6px; padding: 16px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, \'SF Mono\', Menlo, Consolas, \'Liberation Mono\', monospace; font-size: 85%; line-height: 1.45;">',
+        "<pre style=\"background-color: #f6f8fa; border-radius: 6px; padding: 16px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; font-size: 85%; line-height: 1.45;\">",
         html,
     )
 
@@ -143,6 +143,6 @@ def wrap_html_for_email(html_body: str) -> str:
         Wraps in <div> with font-family for consistent rendering.
     """
     if not html_body:
-        return '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', \'Noto Sans\', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;"></div>'
+        return "<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;\"></div>"
 
-    return f'<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', \'Noto Sans\', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;">{html_body}</div>'
+    return f"<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1f2328;\">{html_body}</div>"

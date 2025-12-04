@@ -1,6 +1,5 @@
 """Unit tests for Markdown to HTML conversion utilities."""
 
-
 from gmail_cli.utils.markdown import markdown_to_html, wrap_html_for_email
 
 
