@@ -260,6 +260,20 @@ def migrate_legacy_credentials() -> bool:
     return True
 
 
+def get_raw_credentials_json(account: str) -> str | None:
+    """Get raw credentials JSON for an account.
+
+    This is useful for exporting credentials to transfer to another machine.
+
+    Args:
+        account: Account email to get credentials for.
+
+    Returns:
+        Raw JSON string of credentials or None if not found.
+    """
+    return keyring.get_password(SERVICE_NAME, _get_account_key(account))
+
+
 def clear_all_accounts() -> None:
     """Clear all accounts and credentials from keyring.
 

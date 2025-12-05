@@ -314,7 +314,25 @@ gmail auth status             # Check authentication
 gmail auth set-default x@x.com  # Change default account
 gmail auth logout             # Logout default account
 gmail auth logout --all       # Logout all accounts
+gmail auth token              # Export credentials (for server deployment)
 ```
+
+### Server Deployment
+
+For headless servers without a browser, export credentials locally and transfer them:
+
+```bash
+# On local machine: export credentials
+gmail auth token > credentials_export.json
+
+# Transfer to server (use secure method)
+scp credentials_export.json server:/path/to/
+
+# On server: credentials can be imported via environment or file
+# (See CONTRIBUTING.md for import details)
+```
+
+**Security Warning:** The exported JSON contains sensitive OAuth tokens. Handle with care and delete after transfer.
 
 ### Required Permissions
 
