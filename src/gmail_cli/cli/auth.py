@@ -15,6 +15,7 @@ from gmail_cli.services.auth import (
 from gmail_cli.services.credentials import (
     delete_credentials,
     get_default_account,
+    get_raw_credentials_json,
     has_credentials,
     list_accounts,
     set_default_account,
@@ -264,3 +265,59 @@ def set_default_command(
         print_json({"status": "default_set", "account": email})
     else:
         print_success(f"Standard-Konto gesetzt: {email}")
+
+
+@auth_app.command("token")
+def token_command(
+    account: Annotated[
+        str | None,
+        typer.Option("--account", "-A", help="Account to show token for."),
+    ] = None,
+) -> None:
+    """Show credentials JSON for server deployment.
+
+    Outputs the raw OAuth credentials as JSON, which can be used to
+    transfer authentication to a headless server.
+
+    WARNING: This contains sensitive data. Handle with care!
+    """
+    accounts = list_accounts()
+
+    if not accounts:
+        if is_json_mode():
+            print_json_error("NOT_AUTHENTICATED", "Keine Konten konfiguriert")
+        else:
+            print_error(
+                "Keine Konten konfiguriert",
+                tip="Führe 'gmail auth login' aus um dich anzumelden.",
+            )
+        raise typer.Exit(1)
+
+    # Resolve account
+    target_account = account or get_default_account() or accounts[0]
+
+    if target_account not in accounts:
+        if is_json_mode():
+            print_json_error(
+                "ACCOUNT_NOT_FOUND",
+                f"Konto '{target_account}' nicht gefunden",
+                f"Verfügbare Konten: {', '.join(accounts)}",
+            )
+        else:
+            print_error(
+                f"Konto '{target_account}' nicht gefunden",
+                tip=f"Verfügbare Konten: {', '.join(accounts)}",
+            )
+        raise typer.Exit(1)
+
+    creds_json = get_raw_credentials_json(target_account)
+
+    if not creds_json:
+        if is_json_mode():
+            print_json_error("NO_CREDENTIALS", f"Keine Credentials für {target_account}")
+        else:
+            print_error(f"Keine Credentials für {target_account}")
+        raise typer.Exit(1)
+
+    # Output raw JSON (always JSON, regardless of --json flag)
+    typer.echo(creds_json)

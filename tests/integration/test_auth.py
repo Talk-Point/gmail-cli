@@ -237,3 +237,58 @@ class TestAccountManagement:
 
             assert result.exit_code == 0
             mock_logout.assert_called_once_with(account=None, all_accounts=True)
+
+
+class TestAuthToken:
+    """Tests for gmail auth token command."""
+
+    def test_token_outputs_credentials_json(self) -> None:
+        """Test that token outputs raw credentials JSON."""
+        with (
+            patch("gmail_cli.cli.auth.list_accounts") as mock_list,
+            patch("gmail_cli.cli.auth.get_default_account") as mock_default,
+            patch("gmail_cli.cli.auth.get_raw_credentials_json") as mock_get_json,
+        ):
+            mock_list.return_value = ["user@gmail.com"]
+            mock_default.return_value = "user@gmail.com"
+            mock_get_json.return_value = '{"token": "abc", "refresh_token": "xyz"}'
+
+            result = runner.invoke(app, ["auth", "token"])
+
+            assert result.exit_code == 0
+            assert '"token"' in result.output
+            assert '"refresh_token"' in result.output
+
+    def test_token_with_specific_account(self) -> None:
+        """Test that token works with --account flag."""
+        with (
+            patch("gmail_cli.cli.auth.list_accounts") as mock_list,
+            patch("gmail_cli.cli.auth.get_raw_credentials_json") as mock_get_json,
+        ):
+            mock_list.return_value = ["user@gmail.com", "work@company.com"]
+            mock_get_json.return_value = '{"token": "work_token"}'
+
+            result = runner.invoke(app, ["auth", "token", "--account", "work@company.com"])
+
+            assert result.exit_code == 0
+            mock_get_json.assert_called_once_with("work@company.com")
+
+    def test_token_fails_when_not_authenticated(self) -> None:
+        """Test that token fails when no accounts configured."""
+        with patch("gmail_cli.cli.auth.list_accounts") as mock_list:
+            mock_list.return_value = []
+
+            result = runner.invoke(app, ["auth", "token"])
+
+            assert result.exit_code == 1
+            assert "Keine Konten" in result.output or "NOT_AUTHENTICATED" in result.output
+
+    def test_token_fails_for_unknown_account(self) -> None:
+        """Test that token fails for non-existent account."""
+        with patch("gmail_cli.cli.auth.list_accounts") as mock_list:
+            mock_list.return_value = ["user@gmail.com"]
+
+            result = runner.invoke(app, ["auth", "token", "--account", "unknown@gmail.com"])
+
+            assert result.exit_code == 1
+            assert "nicht gefunden" in result.output or "ACCOUNT_NOT_FOUND" in result.output
