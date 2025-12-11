@@ -1,6 +1,6 @@
 """Integration tests for Markdown in send and reply commands."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -207,7 +207,7 @@ class TestReplyWithMarkdown:
             snippet="Original snippet",
             body_text="Original body",
             body_html=None,
-            date=datetime.now(UTC),
+            date=datetime.now(timezone.utc),
             labels=["INBOX"],
             references=[],
             attachments=[],

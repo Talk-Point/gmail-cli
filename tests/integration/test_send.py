@@ -1,6 +1,6 @@
 """Integration tests for send/reply CLI commands."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -377,7 +377,7 @@ class TestReplyCommand:
                 subject="Original Subject",
                 sender="sender@example.com",
                 recipients=["me@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 message_id="<original@gmail.com>",
                 references=[],
@@ -425,7 +425,7 @@ class TestReplyCommand:
                 subject="Original Subject",
                 sender="sender@example.com",
                 recipients=["me@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 message_id="<original@gmail.com>",
                 references=[],
@@ -461,7 +461,7 @@ class TestReplyCommand:
                 subject="Original Subject",
                 sender="sender@example.com",
                 recipients=["me@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 message_id="<original@gmail.com>",
                 references=[],
@@ -506,7 +506,7 @@ class TestReplyCommand:
                 sender="sender@example.com",
                 recipients=["me@example.com"],
                 cc=["original-cc@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 message_id="<original@gmail.com>",
                 references=[],
@@ -550,7 +550,7 @@ class TestReplyCommand:
                 subject="Original Subject",
                 sender="sender@example.com",
                 recipients=["me@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 message_id="<original@gmail.com>",
                 references=[],
@@ -586,7 +586,7 @@ class TestReplyCommand:
                 subject="Original Subject",
                 sender="sender@example.com",
                 recipients=["me@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 message_id="<original@gmail.com>",
                 references=[],
