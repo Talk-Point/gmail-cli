@@ -1,6 +1,6 @@
 """Integration tests for search CLI command."""
 
-from datetime import UTC
+from datetime import timezone
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -42,7 +42,7 @@ class TestSearchCommand:
                         subject="Test Subject",
                         sender="sender@example.com",
                         recipients=["recipient@example.com"],
-                        date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                        date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                         snippet="Test snippet...",
                     )
                 ],

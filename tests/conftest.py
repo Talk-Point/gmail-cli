@@ -1,6 +1,6 @@
 """Shared test fixtures and Gmail API mocks."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,7 +18,7 @@ def sample_email() -> Email:
         subject="Test Subject",
         sender="Max Mustermann <max@example.com>",
         recipients=["recipient@example.com"],
-        date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+        date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
         cc=["cc@example.com"],
         bcc=[],
         body_text="This is the plain text body.",
@@ -131,7 +131,7 @@ def mock_credentials() -> MagicMock:
     mock_creds.expired = False
     mock_creds.refresh_token = "mock_refresh_token"
     mock_creds.token = "mock_access_token"
-    mock_creds.expiry = datetime(2025, 12, 1, 16, 30, 0, tzinfo=UTC)
+    mock_creds.expiry = datetime(2025, 12, 1, 16, 30, 0, tzinfo=timezone.utc)
     return mock_creds
 
 

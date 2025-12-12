@@ -1,6 +1,6 @@
 """Integration tests for read CLI command."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -37,7 +37,7 @@ class TestReadCommand:
                 subject="Test Subject",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test snippet...",
                 body_text="This is the full email body content.",
             )
@@ -76,7 +76,7 @@ class TestReadCommand:
                 subject="Test Subject",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test snippet...",
                 body_text="Email body here.",
             )
@@ -102,7 +102,7 @@ class TestReadCommand:
                 subject="HTML Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 body_text="",
                 body_html="<p>Hello <b>World</b></p>",

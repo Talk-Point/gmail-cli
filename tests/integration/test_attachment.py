@@ -1,6 +1,6 @@
 """Integration tests for attachment CLI commands."""
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -37,7 +37,7 @@ class TestAttachmentList:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(
@@ -76,7 +76,7 @@ class TestAttachmentList:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[],
             )
@@ -112,7 +112,7 @@ class TestAttachmentList:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(
@@ -158,7 +158,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(
@@ -201,7 +201,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[],
             )
@@ -237,7 +237,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[],
             )
@@ -259,7 +259,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(
@@ -292,7 +292,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(
@@ -335,7 +335,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(
@@ -368,7 +368,7 @@ class TestAttachmentDownload:
                 subject="Test Email",
                 sender="sender@example.com",
                 recipients=["recipient@example.com"],
-                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=UTC),
+                date=datetime(2025, 12, 1, 10, 30, 0, tzinfo=timezone.utc),
                 snippet="Test...",
                 attachments=[
                     Attachment(

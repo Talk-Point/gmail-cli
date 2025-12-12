@@ -3,7 +3,7 @@
 import base64
 import mimetypes
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -245,7 +245,7 @@ def get_email_summary(message_id: str, account: str | None = None) -> Email | No
     except Exception:
         # Fallback to internalDate
         internal_date = int(msg.get("internalDate", 0))
-        date = datetime.fromtimestamp(internal_date / 1000, tz=UTC)
+        date = datetime.fromtimestamp(internal_date / 1000, tz=timezone.utc)
 
     return Email(
         id=msg["id"],
@@ -296,7 +296,7 @@ def get_email(message_id: str, account: str | None = None) -> Email | None:
         date = parsedate_to_datetime(date_str)
     except Exception:
         internal_date = int(msg.get("internalDate", 0))
-        date = datetime.fromtimestamp(internal_date / 1000, tz=UTC)
+        date = datetime.fromtimestamp(internal_date / 1000, tz=timezone.utc)
 
     # Parse recipients
     to_header = headers.get("To", "")
