@@ -1,13 +1,20 @@
 """Output formatting utilities using rich."""
 
 import json
+import sys
 from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-console = Console()
+# Force UTF-8 encoding on Windows to prevent UnicodeEncodeError
+# with special characters like ● ✓ ✗ ℹ 📎
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+console = Console(force_terminal=True if sys.platform == "win32" else None)
 
 # Global flag for JSON output mode
 _json_mode = False
