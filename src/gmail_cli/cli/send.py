@@ -10,6 +10,7 @@ from gmail_cli.services.gmail import (
     SendError,
     compose_email,
     compose_reply,
+    create_draft,
     get_email,
     get_signature,
     send_email,
@@ -107,6 +108,13 @@ def send_command(
             help="Disable Markdown processing and send as plain text only.",
         ),
     ] = False,
+    draft: Annotated[
+        bool,
+        typer.Option(
+            "--draft",
+            help="Save as draft instead of sending.",
+        ),
+    ] = False,
     account: AccountOption = None,
 ) -> None:
     """Send a new email.
@@ -177,28 +185,50 @@ def send_command(
         html_body=html_body,
     )
 
-    # Send
+    # Send or save as draft
     try:
-        result = send_email(message, account=account)
-        if is_json_mode():
-            print_json(
-                {
-                    "sent": True,
-                    "message_id": result.get("id"),
-                    "thread_id": result.get("threadId"),
-                }
-            )
+        if draft:
+            result = create_draft(message, account=account)
+            if is_json_mode():
+                print_json(
+                    {
+                        "status": "draft_created",
+                        "draft_id": result.get("id"),
+                        "message_id": result.get("message", {}).get("id"),
+                        "thread_id": result.get("message", {}).get("threadId"),
+                    }
+                )
+            else:
+                draft_id = result.get("id")
+                print_success("Entwurf erstellt!")
+                print_info(f"Draft-ID: {draft_id}")
         else:
-            msg_id = result.get("id")
-            thread_id = result.get("threadId")
-            print_success("E-Mail gesendet!")
-            print_info(f"Message-ID: {msg_id}")
-            print_info(f"Thread-ID:  {thread_id}")
+            result = send_email(message, account=account)
+            if is_json_mode():
+                print_json(
+                    {
+                        "sent": True,
+                        "message_id": result.get("id"),
+                        "thread_id": result.get("threadId"),
+                    }
+                )
+            else:
+                msg_id = result.get("id")
+                thread_id = result.get("threadId")
+                print_success("E-Mail gesendet!")
+                print_info(f"Message-ID: {msg_id}")
+                print_info(f"Thread-ID:  {thread_id}")
     except SendError as e:
         if is_json_mode():
-            print_json_error("SEND_FAILED", e.message)
+            error_type = "DRAFT_FAILED" if draft else "SEND_FAILED"
+            print_json_error(error_type, e.message)
         else:
-            print_error("E-Mail konnte nicht gesendet werden", details=e.message)
+            action = (
+                "Entwurf konnte nicht erstellt werden"
+                if draft
+                else "E-Mail konnte nicht gesendet werden"
+            )
+            print_error(action, details=e.message)
         raise typer.Exit(1)
 
 
@@ -263,6 +293,13 @@ def reply_command(
             help="Disable Markdown processing and send reply as plain text only.",
         ),
     ] = False,
+    draft: Annotated[
+        bool,
+        typer.Option(
+            "--draft",
+            help="Save as draft instead of sending.",
+        ),
+    ] = False,
     account: AccountOption = None,
 ) -> None:
     """Reply to an email.
@@ -272,6 +309,7 @@ def reply_command(
 
     Use --no-signature to exclude the signature.
     Use --plain to send as plain text without Markdown conversion.
+    Use --draft to save the reply as a draft instead of sending it.
 
     Examples:
         gmail reply 18c1234abcd5678 --body "Thanks for your message!"
@@ -281,6 +319,7 @@ def reply_command(
         gmail reply 18c1234abcd5678 --body "Reply" --account work@company.com
         gmail reply 18c1234abcd5678 --body "**Bold reply**" --plain
         gmail reply 18c1234abcd5678 --body "Quick reply" --no-signature
+        gmail reply 18c1234abcd5678 --body "Review this later" --draft
     """
     # Get original email
     email = get_email(message_id, account=account)
@@ -375,27 +414,52 @@ def reply_command(
         html_body=html_body,
     )
 
-    # Send
+    # Send or save as draft
     try:
-        result = send_email(message, account=account)
-        if is_json_mode():
-            print_json(
-                {
-                    "sent": True,
-                    "message_id": result.get("id"),
-                    "thread_id": result.get("threadId"),
-                    "replied_to": message_id,
-                }
-            )
+        if draft:
+            result = create_draft(message, account=account)
+            if is_json_mode():
+                print_json(
+                    {
+                        "status": "draft_created",
+                        "draft_id": result.get("id"),
+                        "message_id": result.get("message", {}).get("id"),
+                        "thread_id": result.get("message", {}).get("threadId"),
+                        "replied_to": message_id,
+                    }
+                )
+            else:
+                draft_id = result.get("id")
+                thread_id = result.get("message", {}).get("threadId")
+                print_success("Antwort-Entwurf erstellt!")
+                print_info(f"Draft-ID:  {draft_id}")
+                print_info(f"Thread-ID: {thread_id}")
         else:
-            msg_id = result.get("id")
-            thread_id = result.get("threadId")
-            print_success("Antwort gesendet!")
-            print_info(f"Message-ID: {msg_id}")
-            print_info(f"Thread-ID:  {thread_id}")
+            result = send_email(message, account=account)
+            if is_json_mode():
+                print_json(
+                    {
+                        "sent": True,
+                        "message_id": result.get("id"),
+                        "thread_id": result.get("threadId"),
+                        "replied_to": message_id,
+                    }
+                )
+            else:
+                msg_id = result.get("id")
+                thread_id = result.get("threadId")
+                print_success("Antwort gesendet!")
+                print_info(f"Message-ID: {msg_id}")
+                print_info(f"Thread-ID:  {thread_id}")
     except SendError as e:
         if is_json_mode():
-            print_json_error("SEND_FAILED", e.message)
+            error_type = "DRAFT_FAILED" if draft else "SEND_FAILED"
+            print_json_error(error_type, e.message)
         else:
-            print_error("Antwort konnte nicht gesendet werden", details=e.message)
+            action = (
+                "Antwort-Entwurf konnte nicht erstellt werden"
+                if draft
+                else "Antwort konnte nicht gesendet werden"
+            )
+            print_error(action, details=e.message)
         raise typer.Exit(1)

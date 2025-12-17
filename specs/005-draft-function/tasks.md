@@ -19,10 +19,10 @@
 
 **Purpose**: Shared infrastructure for draft functionality
 
-- [ ] T001 [P] Add `create_draft()` function to src/gmail_cli/services/gmail.py
-- [ ] T002 [P] Add `DraftNotFoundError` exception class to src/gmail_cli/services/gmail.py
-- [ ] T003 Create draft CLI app scaffold in src/gmail_cli/cli/draft.py
-- [ ] T004 Register draft_app in src/gmail_cli/cli/main.py
+- [x] T001 [P] Add `create_draft()` function to src/gmail_cli/services/gmail.py
+- [x] T002 [P] Add `DraftNotFoundError` exception class to src/gmail_cli/services/gmail.py
+- [x] T003 Create draft CLI app scaffold in src/gmail_cli/cli/draft.py
+- [x] T004 Register draft_app in src/gmail_cli/cli/main.py
 
 **Checkpoint**: Draft infrastructure ready - user story implementation can begin
 
@@ -40,10 +40,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Add `--draft` flag to send_command() in src/gmail_cli/cli/send.py
-- [ ] T007 [US1] Implement draft creation logic in send_command() using create_draft() in src/gmail_cli/cli/send.py
-- [ ] T008 [US1] Add draft success output (Draft ID, confirmation) in src/gmail_cli/cli/send.py
-- [ ] T009 [US1] Add JSON output for draft creation in src/gmail_cli/cli/send.py
+- [x] T006 [US1] Add `--draft` flag to send_command() in src/gmail_cli/cli/send.py
+- [x] T007 [US1] Implement draft creation logic in send_command() using create_draft() in src/gmail_cli/cli/send.py
+- [x] T008 [US1] Add draft success output (Draft ID, confirmation) in src/gmail_cli/cli/send.py
+- [x] T009 [US1] Add JSON output for draft creation in src/gmail_cli/cli/send.py
 
 **Checkpoint**: `gmail send --draft` fully functional
 
@@ -61,9 +61,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Add `--draft` flag to reply_command() in src/gmail_cli/cli/send.py
-- [ ] T012 [US2] Implement reply draft logic with threadId in src/gmail_cli/cli/send.py
-- [ ] T013 [US2] Add draft success output for reply (Draft ID, Thread ID) in src/gmail_cli/cli/send.py
+- [x] T011 [US2] Add `--draft` flag to reply_command() in src/gmail_cli/cli/send.py
+- [x] T012 [US2] Implement reply draft logic with threadId in src/gmail_cli/cli/send.py
+- [x] T013 [US2] Add draft success output for reply (Draft ID, Thread ID) in src/gmail_cli/cli/send.py
 
 **Checkpoint**: `gmail reply --draft` fully functional with threading
 
@@ -81,11 +81,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T015 [P] [US3] Add `list_drafts()` function to src/gmail_cli/services/gmail.py
-- [ ] T016 [US3] Implement `list_command()` in src/gmail_cli/cli/draft.py
-- [ ] T017 [US3] Add human-readable output for draft list in src/gmail_cli/cli/draft.py
-- [ ] T018 [US3] Add JSON output for draft list in src/gmail_cli/cli/draft.py
-- [ ] T019 [US3] Handle empty drafts case with appropriate message in src/gmail_cli/cli/draft.py
+- [x] T015 [P] [US3] Add `list_drafts()` function to src/gmail_cli/services/gmail.py
+- [x] T016 [US3] Implement `list_command()` in src/gmail_cli/cli/draft.py
+- [x] T017 [US3] Add human-readable output for draft list in src/gmail_cli/cli/draft.py
+- [x] T018 [US3] Add JSON output for draft list in src/gmail_cli/cli/draft.py
+- [x] T019 [US3] Handle empty drafts case with appropriate message in src/gmail_cli/cli/draft.py
 
 **Checkpoint**: `gmail draft list` fully functional
 
@@ -103,11 +103,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T021 [P] [US4] Add `get_draft()` function to src/gmail_cli/services/gmail.py
-- [ ] T022 [US4] Implement `show_command()` in src/gmail_cli/cli/draft.py
-- [ ] T023 [US4] Add human-readable output for draft details in src/gmail_cli/cli/draft.py
-- [ ] T024 [US4] Add JSON output for draft details in src/gmail_cli/cli/draft.py
-- [ ] T025 [US4] Handle draft not found error with DraftNotFoundError in src/gmail_cli/cli/draft.py
+- [x] T021 [P] [US4] Add `get_draft()` function to src/gmail_cli/services/gmail.py
+- [x] T022 [US4] Implement `show_command()` in src/gmail_cli/cli/draft.py
+- [x] T023 [US4] Add human-readable output for draft details in src/gmail_cli/cli/draft.py
+- [x] T024 [US4] Add JSON output for draft details in src/gmail_cli/cli/draft.py
+- [x] T025 [US4] Handle draft not found error with DraftNotFoundError in src/gmail_cli/cli/draft.py
 
 **Checkpoint**: `gmail draft show` fully functional
 
@@ -125,10 +125,10 @@
 
 ### Implementation for User Story 5
 
-- [ ] T027 [P] [US5] Add `send_draft()` function to src/gmail_cli/services/gmail.py
-- [ ] T028 [US5] Implement `send_command()` in src/gmail_cli/cli/draft.py
-- [ ] T029 [US5] Add success output (Message ID, Thread ID) in src/gmail_cli/cli/draft.py
-- [ ] T030 [US5] Handle draft not found error in src/gmail_cli/cli/draft.py
+- [x] T027 [P] [US5] Add `send_draft()` function to src/gmail_cli/services/gmail.py
+- [x] T028 [US5] Implement `send_command()` in src/gmail_cli/cli/draft.py
+- [x] T029 [US5] Add success output (Message ID, Thread ID) in src/gmail_cli/cli/draft.py
+- [x] T030 [US5] Handle draft not found error in src/gmail_cli/cli/draft.py
 
 **Checkpoint**: `gmail draft send` fully functional
 
@@ -146,10 +146,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T032 [P] [US6] Add `delete_draft()` function to src/gmail_cli/services/gmail.py
-- [ ] T033 [US6] Implement `delete_command()` in src/gmail_cli/cli/draft.py
-- [ ] T034 [US6] Add success output for deletion in src/gmail_cli/cli/draft.py
-- [ ] T035 [US6] Handle draft not found error in src/gmail_cli/cli/draft.py
+- [x] T032 [P] [US6] Add `delete_draft()` function to src/gmail_cli/services/gmail.py
+- [x] T033 [US6] Implement `delete_command()` in src/gmail_cli/cli/draft.py
+- [x] T034 [US6] Add success output for deletion in src/gmail_cli/cli/draft.py
+- [x] T035 [US6] Handle draft not found error in src/gmail_cli/cli/draft.py
 
 **Checkpoint**: `gmail draft delete` fully functional
 
@@ -159,11 +159,11 @@
 
 **Purpose**: Quality assurance and integration
 
-- [ ] T036 [P] Add --account flag to all draft commands in src/gmail_cli/cli/draft.py
+- [x] T036 [P] Add --account flag to all draft commands in src/gmail_cli/cli/draft.py
 - [ ] T037 [P] Integration test for complete draft workflow in tests/integration/test_draft_cli.py
 - [ ] T038 [P] Regression test for send/reply without --draft in tests/integration/test_draft_cli.py
-- [ ] T039 Run ruff check and ruff format on all modified files
-- [ ] T040 Run pytest to verify all tests pass
+- [x] T039 Run ruff check and ruff format on all modified files
+- [x] T040 Run pytest to verify all tests pass
 - [ ] T041 Run quickstart.md validation (manual test of documented commands)
 
 ---
