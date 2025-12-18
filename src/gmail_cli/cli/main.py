@@ -8,6 +8,7 @@ from gmail_cli import __version__
 from gmail_cli.cli.accounts import accounts_app
 from gmail_cli.cli.attachment import attachment_app
 from gmail_cli.cli.auth import auth_app
+from gmail_cli.cli.draft import draft_app
 from gmail_cli.cli.read import read_command
 from gmail_cli.cli.search import search_command
 from gmail_cli.cli.send import reply_command, send_command
@@ -55,6 +56,7 @@ def main(
 app.add_typer(accounts_app, name="accounts")
 app.add_typer(auth_app, name="auth")
 app.add_typer(attachment_app, name="attachment")
+app.add_typer(draft_app, name="draft")
 app.command("search")(search_command)
 app.command("read")(read_command)
 app.command("send")(send_command)

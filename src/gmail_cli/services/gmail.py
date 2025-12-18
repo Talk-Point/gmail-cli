@@ -250,7 +250,7 @@ def get_email_summary(message_id: str, account: str | None = None) -> Email | No
     return Email(
         id=msg["id"],
         thread_id=msg["threadId"],
-        subject=headers.get("Subject", "(kein Betreff)"),
+        subject=headers.get("Subject", "(no subject)"),
         sender=headers.get("From", ""),
         recipients=[headers.get("To", "")],
         date=date,
@@ -310,7 +310,7 @@ def get_email(message_id: str, account: str | None = None) -> Email | None:
     return Email(
         id=msg["id"],
         thread_id=msg["threadId"],
-        subject=headers.get("Subject", "(kein Betreff)"),
+        subject=headers.get("Subject", "(no subject)"),
         sender=headers.get("From", ""),
         recipients=recipients,
         cc=cc,
@@ -620,6 +620,15 @@ class SendError(Exception):
         super().__init__(message)
 
 
+class DraftNotFoundError(Exception):
+    """Error when draft is not found."""
+
+    def __init__(self, draft_id: str):
+        self.draft_id = draft_id
+        self.message = f"Entwurf '{draft_id}' nicht gefunden"
+        super().__init__(self.message)
+
+
 def send_email(message: dict, account: str | None = None) -> dict:
     """Send an email message.
 
@@ -647,3 +656,225 @@ def send_email(message: dict, account: str | None = None) -> dict:
         elif e.resp.status == 429:
             error_msg = "Zu viele Anfragen - bitte warte einen Moment"
         raise SendError(error_msg, e.resp.status) from e
+
+
+def create_draft(message: dict, account: str | None = None) -> dict:
+    """Create a draft email.
+
+    Args:
+        message: Message dict from compose_email or compose_reply.
+        account: Account email to use. If None, uses resolved account.
+
+    Returns:
+        API response with draft ID and message info.
+
+    Raises:
+        SendError: If creating draft fails.
+    """
+    service = get_gmail_service(account=account)
+
+    try:
+        body = {"message": message}
+        request = service.users().drafts().create(userId="me", body=body)
+        return _execute_with_retry(request, account=account)
+    except HttpError as e:
+        error_msg = str(e)
+        if e.resp.status == 400:
+            error_msg = "Ungültiges Nachrichtenformat"
+        elif e.resp.status == 403:
+            error_msg = "Keine Berechtigung zum Erstellen von Entwürfen"
+        elif e.resp.status == 429:
+            error_msg = "Zu viele Anfragen - bitte warte einen Moment"
+        raise SendError(error_msg, e.resp.status) from e
+
+
+def list_drafts(
+    account: str | None = None,
+    max_results: int = 20,
+) -> list[dict]:
+    """List all drafts.
+
+    Uses batch requests to fetch draft details efficiently.
+
+    Args:
+        account: Account email to use. If None, uses resolved account.
+        max_results: Maximum number of drafts to return.
+
+    Returns:
+        List of draft dicts with id and message info.
+    """
+    service = get_gmail_service(account=account)
+
+    request = service.users().drafts().list(userId="me", maxResults=max_results)
+    response = _execute_with_retry(request, account=account)
+
+    drafts = response.get("drafts", [])
+
+    if not drafts:
+        return []
+
+    # Use batch request to fetch all draft details at once
+    result = []
+    errors = []
+
+    def handle_response(_request_id: str, response: dict, exception: Exception | None):
+        if exception is not None:
+            errors.append(exception)
+            return
+
+        # Parse message headers
+        message = response.get("message", {})
+        headers = {h["name"]: h["value"] for h in message.get("payload", {}).get("headers", [])}
+
+        result.append(
+            {
+                "id": response["id"],
+                "message_id": message.get("id"),
+                "thread_id": message.get("threadId"),
+                "to": headers.get("To", ""),
+                "cc": headers.get("Cc", ""),
+                "subject": headers.get("Subject", "(kein Betreff)"),
+                "snippet": message.get("snippet", ""),
+            }
+        )
+
+    batch = service.new_batch_http_request(callback=handle_response)
+
+    for draft in drafts:
+        batch.add(
+            service.users()
+            .drafts()
+            .get(
+                userId="me",
+                id=draft["id"],
+                format="metadata",
+            )
+        )
+
+    batch.execute()
+
+    return result
+
+
+def get_draft(
+    draft_id: str,
+    account: str | None = None,
+    include_body: bool = True,
+) -> dict | None:
+    """Get a draft by ID.
+
+    Args:
+        draft_id: The draft ID.
+        account: Account email to use. If None, uses resolved account.
+        include_body: Whether to include the full message body.
+
+    Returns:
+        Draft dict with message details, or None if not found.
+
+    Raises:
+        DraftNotFoundError: If draft is not found.
+    """
+    service = get_gmail_service(account=account)
+
+    try:
+        format_type = "full" if include_body else "metadata"
+        request = (
+            service.users()
+            .drafts()
+            .get(
+                userId="me",
+                id=draft_id,
+                format=format_type,
+            )
+        )
+        response = _execute_with_retry(request, account=account)
+
+        # Parse message headers
+        message = response.get("message", {})
+        headers = {h["name"]: h["value"] for h in message.get("payload", {}).get("headers", [])}
+
+        result = {
+            "id": response["id"],
+            "message_id": message.get("id"),
+            "thread_id": message.get("threadId"),
+            "to": headers.get("To", ""),
+            "cc": headers.get("Cc", ""),
+            "subject": headers.get("Subject", "(no subject)"),
+            "snippet": message.get("snippet", ""),
+        }
+
+        if include_body:
+            body_text, body_html, attachments = _parse_message_parts(
+                message.get("payload", {}), message.get("id", "")
+            )
+            result["body_text"] = body_text
+            result["body_html"] = body_html
+            result["attachments"] = [
+                {"filename": a.filename, "size": a.size, "mime_type": a.mime_type}
+                for a in attachments
+            ]
+
+        return result
+
+    except HttpError as e:
+        if e.resp.status == 404:
+            raise DraftNotFoundError(draft_id) from e
+        raise
+
+
+def send_draft(draft_id: str, account: str | None = None) -> dict:
+    """Send an existing draft.
+
+    Args:
+        draft_id: The draft ID to send.
+        account: Account email to use. If None, uses resolved account.
+
+    Returns:
+        API response with sent message info.
+
+    Raises:
+        DraftNotFoundError: If draft is not found.
+        SendError: If sending fails.
+    """
+    service = get_gmail_service(account=account)
+
+    try:
+        request = (
+            service.users()
+            .drafts()
+            .send(
+                userId="me",
+                body={"id": draft_id},
+            )
+        )
+        return _execute_with_retry(request, account=account)
+    except HttpError as e:
+        if e.resp.status == 404:
+            raise DraftNotFoundError(draft_id) from e
+        error_msg = str(e)
+        if e.resp.status == 400:
+            error_msg = "Ungültiger Entwurf - möglicherweise fehlen Empfänger"
+        elif e.resp.status == 403:
+            error_msg = "Keine Berechtigung zum Senden"
+        raise SendError(error_msg, e.resp.status) from e
+
+
+def delete_draft(draft_id: str, account: str | None = None) -> None:
+    """Delete a draft.
+
+    Args:
+        draft_id: The draft ID to delete.
+        account: Account email to use. If None, uses resolved account.
+
+    Raises:
+        DraftNotFoundError: If draft is not found.
+    """
+    service = get_gmail_service(account=account)
+
+    try:
+        request = service.users().drafts().delete(userId="me", id=draft_id)
+        _execute_with_retry(request, account=account)
+    except HttpError as e:
+        if e.resp.status == 404:
+            raise DraftNotFoundError(draft_id) from e
+        raise
