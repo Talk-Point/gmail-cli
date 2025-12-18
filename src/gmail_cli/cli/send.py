@@ -223,11 +223,7 @@ def send_command(
             error_type = "DRAFT_FAILED" if draft else "SEND_FAILED"
             print_json_error(error_type, e.message)
         else:
-            action = (
-                "Failed to create draft"
-                if draft
-                else "Failed to send email"
-            )
+            action = "Failed to create draft" if draft else "Failed to send email"
             print_error(action, details=e.message)
         raise typer.Exit(1)
 
@@ -456,10 +452,6 @@ def reply_command(
             error_type = "DRAFT_FAILED" if draft else "SEND_FAILED"
             print_json_error(error_type, e.message)
         else:
-            action = (
-                "Failed to create reply draft"
-                if draft
-                else "Failed to send reply"
-            )
+            action = "Failed to create reply draft" if draft else "Failed to send reply"
             print_error(action, details=e.message)
         raise typer.Exit(1)

@@ -267,9 +267,12 @@ class TestSendWithDraftFlag:
                 app,
                 [
                     "send",
-                    "--to", "recipient@example.com",
-                    "--subject", "Test Subject",
-                    "--body", "Test body",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test Subject",
+                    "--body",
+                    "Test body",
                     "--draft",
                 ],
             )

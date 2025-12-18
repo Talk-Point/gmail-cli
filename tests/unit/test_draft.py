@@ -297,7 +297,10 @@ class TestSendDraft:
             mock_get.return_value = mock_service
             send_draft("r1234567890")
 
-        assert "Invalid draft" in exc_info.value.message or "missing recipients" in exc_info.value.message
+        assert (
+            "Invalid draft" in exc_info.value.message
+            or "missing recipients" in exc_info.value.message
+        )
 
 
 class TestDeleteDraft:

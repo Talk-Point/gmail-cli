@@ -726,21 +726,25 @@ def list_drafts(
         message = response.get("message", {})
         headers = {h["name"]: h["value"] for h in message.get("payload", {}).get("headers", [])}
 
-        result.append({
-            "id": response["id"],
-            "message_id": message.get("id"),
-            "thread_id": message.get("threadId"),
-            "to": headers.get("To", ""),
-            "cc": headers.get("Cc", ""),
-            "subject": headers.get("Subject", "(no subject)"),
-            "snippet": message.get("snippet", ""),
-        })
+        result.append(
+            {
+                "id": response["id"],
+                "message_id": message.get("id"),
+                "thread_id": message.get("threadId"),
+                "to": headers.get("To", ""),
+                "cc": headers.get("Cc", ""),
+                "subject": headers.get("Subject", "(no subject)"),
+                "snippet": message.get("snippet", ""),
+            }
+        )
 
     batch = service.new_batch_http_request(callback=handle_response)
 
     for draft in drafts:
         batch.add(
-            service.users().drafts().get(
+            service.users()
+            .drafts()
+            .get(
                 userId="me",
                 id=draft["id"],
                 format="metadata",
