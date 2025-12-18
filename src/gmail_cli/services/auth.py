@@ -21,6 +21,7 @@ from gmail_cli.services.credentials import (
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.compose",  # Required for drafts
     "https://www.googleapis.com/auth/gmail.settings.basic",
 ]
 
