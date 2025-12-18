@@ -23,8 +23,8 @@ gmail send --to EMAIL [--to EMAIL...] --subject TEXT (--body TEXT | --body-file 
 
 **Output (Human)**:
 ```
-Draft created!
-  Draft ID: r1234567890
+Entwurf erstellt!
+  Draft-ID: r1234567890
 ```
 
 **Output (JSON)**:
@@ -63,9 +63,9 @@ gmail reply MESSAGE_ID (--body TEXT | --body-file PATH) [OPTIONS] --draft
 
 **Output (Human)**:
 ```
-Reply draft created!
-  Draft ID: r1234567890
-  Thread ID: thread123
+Antwort-Entwurf erstellt!
+  Draft-ID:  r1234567890
+  Thread-ID: thread123
 ```
 
 **Output (JSON)**:
@@ -98,7 +98,7 @@ gmail draft list [--json] [--account EMAIL] [--limit N]
 
 **Output (Human)**:
 ```
-Drafts (3):
+Entwürfe (3):
   r1234567890  recipient@example.com     Subject line here
   r0987654321  another@example.com       Another subject
   r1111111111  third@example.com         Third email draft
@@ -106,7 +106,7 @@ Drafts (3):
 
 **Output (No Drafts)**:
 ```
-No drafts found.
+Keine Entwürfe vorhanden.
 ```
 
 **Output (JSON)**:
@@ -152,17 +152,17 @@ gmail draft show DRAFT_ID [--json] [--account EMAIL]
 
 **Output (Human)**:
 ```
-Draft: r1234567890
+Entwurf: r1234567890
 
-To:      recipient@example.com
+An:      recipient@example.com
 Cc:      cc@example.com
-Subject: Subject line here
+Betreff: Subject line here
 Thread:  thread123
 
 This is the email body content.
 It can span multiple lines.
 
-Attachments:
+Anhänge:
   - document.pdf (1.2 MB)
 ```
 
@@ -188,7 +188,7 @@ Attachments:
 
 **Error (Not Found)**:
 ```
-Draft 'r1234567890' not found
+Entwurf 'r1234567890' nicht gefunden
 ```
 
 **Exit Codes**:
@@ -218,9 +218,9 @@ gmail draft send DRAFT_ID [--account EMAIL]
 
 **Output (Human)**:
 ```
-Draft sent!
-  Message ID: msg456
-  Thread ID:  thread123
+Entwurf gesendet!
+  Message-ID: msg456
+  Thread-ID:  thread123
 ```
 
 **Output (JSON)**:
@@ -234,7 +234,7 @@ Draft sent!
 
 **Error (Not Found)**:
 ```
-Draft 'r1234567890' not found
+Entwurf 'r1234567890' nicht gefunden
 ```
 
 **Exit Codes**:
@@ -264,7 +264,7 @@ gmail draft delete DRAFT_ID [--account EMAIL]
 
 **Output (Human)**:
 ```
-Draft deleted.
+Entwurf gelöscht.
 ```
 
 **Output (JSON)**:
@@ -277,7 +277,7 @@ Draft deleted.
 
 **Error (Not Found)**:
 ```
-Draft 'r1234567890' not found
+Entwurf 'r1234567890' nicht gefunden
 ```
 
 **Exit Codes**:

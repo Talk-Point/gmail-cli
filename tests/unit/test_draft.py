@@ -58,7 +58,7 @@ class TestCreateDraft:
             mock_get.return_value = mock_service
             create_draft({"raw": "invalid"})
 
-        assert "Invalid message format" in exc_info.value.message
+        assert "Ungültiges Nachrichtenformat" in exc_info.value.message
 
     def test_create_draft_permission_error(self) -> None:
         """Test draft creation with permission denied."""
@@ -77,7 +77,7 @@ class TestCreateDraft:
             mock_get.return_value = mock_service
             create_draft({"raw": "test"})
 
-        assert "Permission denied" in exc_info.value.message
+        assert "Keine Berechtigung" in exc_info.value.message
 
 
 class TestListDrafts:
@@ -298,8 +298,8 @@ class TestSendDraft:
             send_draft("r1234567890")
 
         assert (
-            "Invalid draft" in exc_info.value.message
-            or "missing recipients" in exc_info.value.message
+            "Ungültiger Entwurf" in exc_info.value.message
+            or "fehlen Empfänger" in exc_info.value.message
         )
 
 

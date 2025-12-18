@@ -63,7 +63,7 @@ class TestDraftListCommand:
             result = runner.invoke(app, ["draft", "list"])
 
             assert result.exit_code == 0
-            assert "No drafts" in result.output
+            assert "Keine Entwürfe" in result.output
 
     def test_draft_list_with_limit(self) -> None:
         """Test listing drafts with limit option."""
@@ -138,7 +138,7 @@ class TestDraftShowCommand:
 
             assert result.exit_code == 1
             assert "invalid_id" in result.output
-            assert "not found" in result.output
+            assert "nicht gefunden" in result.output
 
     def test_draft_show_with_attachments(self) -> None:
         """Test showing draft with attachments."""
@@ -160,7 +160,7 @@ class TestDraftShowCommand:
             result = runner.invoke(app, ["draft", "show", "r1234567890"])
 
             assert result.exit_code == 0
-            assert "Attachments" in result.output
+            assert "Anhänge" in result.output or "Anh" in result.output
             assert "document.pdf" in result.output
 
 
@@ -182,7 +182,7 @@ class TestDraftSendCommand:
             result = runner.invoke(app, ["draft", "send", "r1234567890"])
 
             assert result.exit_code == 0
-            assert "Draft sent" in result.output
+            assert "Entwurf gesendet" in result.output
             assert "sent123" in result.output
 
     def test_draft_send_not_found(self) -> None:
@@ -198,7 +198,7 @@ class TestDraftSendCommand:
 
             assert result.exit_code == 1
             assert "invalid_id" in result.output
-            assert "not found" in result.output
+            assert "nicht gefunden" in result.output
 
     def test_draft_send_failure(self) -> None:
         """Test draft send failure."""
@@ -229,7 +229,7 @@ class TestDraftDeleteCommand:
             result = runner.invoke(app, ["draft", "delete", "r1234567890"])
 
             assert result.exit_code == 0
-            assert "Draft deleted" in result.output
+            assert "Entwurf gelöscht" in result.output
 
     def test_draft_delete_not_found(self) -> None:
         """Test deleting non-existent draft."""
@@ -244,7 +244,7 @@ class TestDraftDeleteCommand:
 
             assert result.exit_code == 1
             assert "invalid_id" in result.output
-            assert "not found" in result.output
+            assert "nicht gefunden" in result.output
 
 
 class TestSendWithDraftFlag:
@@ -278,7 +278,7 @@ class TestSendWithDraftFlag:
             )
 
             assert result.exit_code == 0
-            assert "Draft created" in result.output
+            assert "Entwurf erstellt" in result.output
             mock_create.assert_called_once()
 
 
@@ -318,7 +318,7 @@ class TestReplyWithDraftFlag:
             )
 
             assert result.exit_code == 0
-            assert "Reply draft created" in result.output
+            assert "Antwort-Entwurf erstellt" in result.output
             mock_create.assert_called_once()
 
 

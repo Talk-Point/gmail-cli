@@ -21,8 +21,8 @@ gmail send \
   --draft
 
 # Output:
-# Draft created!
-#   Draft ID: r1234567890
+# Entwurf erstellt!
+#   Draft-ID: r1234567890
 ```
 
 ### 2. Save Reply as Draft
@@ -34,9 +34,9 @@ gmail reply msg123456 \
   --draft
 
 # Output:
-# Reply draft created!
-#   Draft ID: r0987654321
-#   Thread ID: thread789
+# Antwort-Entwurf erstellt!
+#   Draft-ID:  r0987654321
+#   Thread-ID: thread789
 ```
 
 ### 3. List All Drafts
@@ -45,7 +45,7 @@ gmail reply msg123456 \
 gmail draft list
 
 # Output:
-# Drafts (2):
+# Entwürfe (2):
 #   r1234567890  recipient@example.com  Meeting tomorrow
 #   r0987654321  sender@example.com      Re: Your request
 ```
@@ -56,10 +56,10 @@ gmail draft list
 gmail draft show r1234567890
 
 # Output:
-# Draft: r1234567890
+# Entwurf: r1234567890
 #
-# To:      recipient@example.com
-# Subject: Meeting tomorrow
+# An:      recipient@example.com
+# Betreff: Meeting tomorrow
 #
 # Hello, can we call tomorrow?
 ```
@@ -70,9 +70,9 @@ gmail draft show r1234567890
 gmail draft send r1234567890
 
 # Output:
-# Draft sent!
-#   Message ID: msg789
-#   Thread ID:  thread456
+# Entwurf gesendet!
+#   Message-ID: msg789
+#   Thread-ID:  thread456
 ```
 
 ### 6. Delete Draft
@@ -81,7 +81,7 @@ gmail draft send r1234567890
 gmail draft delete r0987654321
 
 # Output:
-# Draft deleted.
+# Entwurf gelöscht.
 ```
 
 ## JSON Output for Scripting
@@ -144,7 +144,7 @@ gmail draft list --json | jq '.drafts[].id'
 ```bash
 # Non-existent draft
 gmail draft show invalid_id
-# Draft 'invalid_id' not found
+# Entwurf 'invalid_id' nicht gefunden
 
 # Not authenticated
 gmail draft list

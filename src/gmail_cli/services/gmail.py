@@ -625,7 +625,7 @@ class DraftNotFoundError(Exception):
 
     def __init__(self, draft_id: str):
         self.draft_id = draft_id
-        self.message = f"Draft '{draft_id}' not found"
+        self.message = f"Entwurf '{draft_id}' nicht gefunden"
         super().__init__(self.message)
 
 
@@ -680,11 +680,11 @@ def create_draft(message: dict, account: str | None = None) -> dict:
     except HttpError as e:
         error_msg = str(e)
         if e.resp.status == 400:
-            error_msg = "Invalid message format"
+            error_msg = "Ungültiges Nachrichtenformat"
         elif e.resp.status == 403:
-            error_msg = "Permission denied to create drafts"
+            error_msg = "Keine Berechtigung zum Erstellen von Entwürfen"
         elif e.resp.status == 429:
-            error_msg = "Too many requests - please wait a moment"
+            error_msg = "Zu viele Anfragen - bitte warte einen Moment"
         raise SendError(error_msg, e.resp.status) from e
 
 
@@ -733,7 +733,7 @@ def list_drafts(
                 "thread_id": message.get("threadId"),
                 "to": headers.get("To", ""),
                 "cc": headers.get("Cc", ""),
-                "subject": headers.get("Subject", "(no subject)"),
+                "subject": headers.get("Subject", "(kein Betreff)"),
                 "snippet": message.get("snippet", ""),
             }
         )
@@ -853,9 +853,9 @@ def send_draft(draft_id: str, account: str | None = None) -> dict:
             raise DraftNotFoundError(draft_id) from e
         error_msg = str(e)
         if e.resp.status == 400:
-            error_msg = "Invalid draft - possibly missing recipients"
+            error_msg = "Ungültiger Entwurf - möglicherweise fehlen Empfänger"
         elif e.resp.status == 403:
-            error_msg = "Permission denied to send"
+            error_msg = "Keine Berechtigung zum Senden"
         raise SendError(error_msg, e.resp.status) from e
 
 

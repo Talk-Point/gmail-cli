@@ -72,14 +72,14 @@ def list_command(
         )
     else:
         if not drafts:
-            print_warning("No drafts found.")
+            print_warning("Keine Entwürfe vorhanden.")
             return
 
-        print_info(f"Drafts ({len(drafts)}):")
+        print_info(f"Entwürfe ({len(drafts)}):")
         for draft in drafts:
             draft_id = draft["id"]
-            to = draft.get("to", "") or "(no recipient)"
-            subject = draft.get("subject", "(no subject)")
+            to = draft.get("to", "") or "(kein Empfänger)"
+            subject = draft.get("subject", "(kein Betreff)")
             # Truncate for display
             if len(to) > 30:
                 to = to[:27] + "..."
@@ -118,12 +118,12 @@ def show_command(
     if is_json_mode():
         print_json(draft)
     else:
-        print_info(f"Draft: {draft['id']}")
+        print_info(f"Entwurf: {draft['id']}")
         print()
-        print(f"To:      {draft.get('to', '(no recipient)')}")
+        print(f"An:      {draft.get('to', '(kein Empfänger)')}")
         if draft.get("cc"):
             print(f"Cc:      {draft['cc']}")
-        print(f"Subject: {draft.get('subject', '(no subject)')}")
+        print(f"Betreff: {draft.get('subject', '(kein Betreff)')}")
         if draft.get("thread_id"):
             print(f"Thread:  {draft['thread_id']}")
         print()
@@ -137,7 +137,7 @@ def show_command(
         attachments = draft.get("attachments", [])
         if attachments:
             print()
-            print("Attachments:")
+            print("Anhänge:")
             for att in attachments:
                 size_mb = att["size"] / (1024 * 1024)
                 print(f"  - {att['filename']} ({size_mb:.1f} MB)")
@@ -172,9 +172,9 @@ def send_command(
                 }
             )
         else:
-            print_success("Draft sent!")
-            print_info(f"Message ID: {result.get('id')}")
-            print_info(f"Thread ID:  {result.get('threadId')}")
+            print_success("Entwurf gesendet!")
+            print_info(f"Message-ID: {result.get('id')}")
+            print_info(f"Thread-ID:  {result.get('threadId')}")
 
     except DraftNotFoundError as e:
         if is_json_mode():
@@ -186,7 +186,7 @@ def send_command(
         if is_json_mode():
             print_json_error("SEND_FAILED", e.message)
         else:
-            print_error("Failed to send draft", details=e.message)
+            print_error("Entwurf konnte nicht gesendet werden", details=e.message)
         raise typer.Exit(1)
 
 
@@ -218,7 +218,7 @@ def delete_command(
                 }
             )
         else:
-            print_success("Draft deleted.")
+            print_success("Entwurf gelöscht.")
 
     except DraftNotFoundError as e:
         if is_json_mode():
