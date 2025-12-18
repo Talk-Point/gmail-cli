@@ -200,8 +200,8 @@ def send_command(
                 )
             else:
                 draft_id = result.get("id")
-                print_success("Entwurf erstellt!")
-                print_info(f"Draft-ID: {draft_id}")
+                print_success("Draft created!")
+                print_info(f"Draft ID: {draft_id}")
         else:
             result = send_email(message, account=account)
             if is_json_mode():
@@ -215,18 +215,18 @@ def send_command(
             else:
                 msg_id = result.get("id")
                 thread_id = result.get("threadId")
-                print_success("E-Mail gesendet!")
-                print_info(f"Message-ID: {msg_id}")
-                print_info(f"Thread-ID:  {thread_id}")
+                print_success("Email sent!")
+                print_info(f"Message ID: {msg_id}")
+                print_info(f"Thread ID:  {thread_id}")
     except SendError as e:
         if is_json_mode():
             error_type = "DRAFT_FAILED" if draft else "SEND_FAILED"
             print_json_error(error_type, e.message)
         else:
             action = (
-                "Entwurf konnte nicht erstellt werden"
+                "Failed to create draft"
                 if draft
-                else "E-Mail konnte nicht gesendet werden"
+                else "Failed to send email"
             )
             print_error(action, details=e.message)
         raise typer.Exit(1)
@@ -431,9 +431,9 @@ def reply_command(
             else:
                 draft_id = result.get("id")
                 thread_id = result.get("message", {}).get("threadId")
-                print_success("Antwort-Entwurf erstellt!")
-                print_info(f"Draft-ID:  {draft_id}")
-                print_info(f"Thread-ID: {thread_id}")
+                print_success("Reply draft created!")
+                print_info(f"Draft ID:  {draft_id}")
+                print_info(f"Thread ID: {thread_id}")
         else:
             result = send_email(message, account=account)
             if is_json_mode():
@@ -448,18 +448,18 @@ def reply_command(
             else:
                 msg_id = result.get("id")
                 thread_id = result.get("threadId")
-                print_success("Antwort gesendet!")
-                print_info(f"Message-ID: {msg_id}")
-                print_info(f"Thread-ID:  {thread_id}")
+                print_success("Reply sent!")
+                print_info(f"Message ID: {msg_id}")
+                print_info(f"Thread ID:  {thread_id}")
     except SendError as e:
         if is_json_mode():
             error_type = "DRAFT_FAILED" if draft else "SEND_FAILED"
             print_json_error(error_type, e.message)
         else:
             action = (
-                "Antwort-Entwurf konnte nicht erstellt werden"
+                "Failed to create reply draft"
                 if draft
-                else "Antwort konnte nicht gesendet werden"
+                else "Failed to send reply"
             )
             print_error(action, details=e.message)
         raise typer.Exit(1)

@@ -1,56 +1,56 @@
-# Quickstart: Draft-Funktion
+# Quickstart: Draft Function
 
 **Feature**: 005-draft-function
 **Date**: 2025-12-17
 
-## Voraussetzungen
+## Prerequisites
 
-- gmail-cli installiert und authentifiziert (`gmail auth login`)
-- Gmail-Account mit aktiviertem API-Zugriff
+- gmail-cli installed and authenticated (`gmail auth login`)
+- Gmail account with API access enabled
 
-## Schnellstart
+## Quick Start
 
-### 1. E-Mail als Entwurf speichern
+### 1. Save Email as Draft
 
 ```bash
-# Neue E-Mail als Entwurf
+# New email as draft
 gmail send \
-  --to empfaenger@example.com \
-  --subject "Meeting morgen" \
-  --body "Hallo, können wir morgen telefonieren?" \
+  --to recipient@example.com \
+  --subject "Meeting tomorrow" \
+  --body "Hello, can we call tomorrow?" \
   --draft
 
 # Output:
-# Draft created.
+# Draft created!
 #   Draft ID: r1234567890
 ```
 
-### 2. Antwort als Entwurf speichern
+### 2. Save Reply as Draft
 
 ```bash
-# Antwort auf eine E-Mail als Entwurf
+# Reply to an email as draft
 gmail reply msg123456 \
-  --body "Danke für die Info, ich melde mich!" \
+  --body "Thanks for the info, I'll get back to you!" \
   --draft
 
 # Output:
-# Reply draft created.
+# Reply draft created!
 #   Draft ID: r0987654321
 #   Thread ID: thread789
 ```
 
-### 3. Alle Entwürfe auflisten
+### 3. List All Drafts
 
 ```bash
 gmail draft list
 
 # Output:
 # Drafts (2):
-#   r1234567890  empfaenger@example.com  Meeting morgen
-#   r0987654321  sender@example.com      Re: Ihre Anfrage
+#   r1234567890  recipient@example.com  Meeting tomorrow
+#   r0987654321  sender@example.com      Re: Your request
 ```
 
-### 4. Entwurf anzeigen
+### 4. Show Draft
 
 ```bash
 gmail draft show r1234567890
@@ -58,24 +58,24 @@ gmail draft show r1234567890
 # Output:
 # Draft: r1234567890
 #
-# To: empfaenger@example.com
-# Subject: Meeting morgen
+# To:      recipient@example.com
+# Subject: Meeting tomorrow
 #
-# Hallo, können wir morgen telefonieren?
+# Hello, can we call tomorrow?
 ```
 
-### 5. Entwurf senden
+### 5. Send Draft
 
 ```bash
 gmail draft send r1234567890
 
 # Output:
-# Draft sent successfully.
+# Draft sent!
 #   Message ID: msg789
-#   Thread ID: thread456
+#   Thread ID:  thread456
 ```
 
-### 6. Entwurf löschen
+### 6. Delete Draft
 
 ```bash
 gmail draft delete r0987654321
@@ -84,49 +84,49 @@ gmail draft delete r0987654321
 # Draft deleted.
 ```
 
-## JSON-Output für Scripting
+## JSON Output for Scripting
 
 ```bash
-# Alle Entwürfe als JSON
+# All drafts as JSON
 gmail draft list --json
 
-# Entwurf-Details als JSON
+# Draft details as JSON
 gmail draft show r1234567890 --json
 ```
 
 ## Multi-Account Support
 
 ```bash
-# Entwurf für bestimmten Account
+# Draft for specific account
 gmail send --to user@example.com --subject "Test" --body "Content" \
   --draft --account work@company.com
 
-# Entwürfe eines bestimmten Accounts auflisten
+# List drafts of specific account
 gmail draft list --account work@company.com
 ```
 
-## Typische Workflows
+## Typical Workflows
 
-### Entwurf erstellen → überprüfen → senden
+### Create draft → review → send
 
 ```bash
-# 1. Entwurf erstellen
-gmail send -t user@example.com -s "Wichtig" -b "Inhalt..." --draft
+# 1. Create draft
+gmail send -t user@example.com -s "Important" -b "Content..." --draft
 # → Draft ID: r123
 
-# 2. Im Browser überprüfen (Gmail Entwürfe)
-# ... oder ...
+# 2. Review in browser (Gmail Drafts)
+# ... or ...
 gmail draft show r123
 
-# 3. Senden wenn zufrieden
+# 3. Send when satisfied
 gmail draft send r123
 ```
 
-### Batch-Entwürfe mit Skript
+### Batch drafts with script
 
 ```bash
 #!/bin/bash
-# Mehrere Entwürfe erstellen
+# Create multiple drafts
 for email in user1@example.com user2@example.com user3@example.com; do
   gmail send \
     --to "$email" \
@@ -135,18 +135,18 @@ for email in user1@example.com user2@example.com user3@example.com; do
     --draft
 done
 
-# Alle erstellten Entwürfe anzeigen
+# Show all created drafts
 gmail draft list --json | jq '.drafts[].id'
 ```
 
-## Fehlerbehandlung
+## Error Handling
 
 ```bash
-# Nicht existierender Entwurf
+# Non-existent draft
 gmail draft show invalid_id
-# Error: Draft 'invalid_id' not found.
+# Draft 'invalid_id' not found
 
-# Nicht authentifiziert
+# Not authenticated
 gmail draft list
 # Error: Not authenticated. Run 'gmail auth login' first.
 ```

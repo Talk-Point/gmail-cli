@@ -250,7 +250,7 @@ def get_email_summary(message_id: str, account: str | None = None) -> Email | No
     return Email(
         id=msg["id"],
         thread_id=msg["threadId"],
-        subject=headers.get("Subject", "(kein Betreff)"),
+        subject=headers.get("Subject", "(no subject)"),
         sender=headers.get("From", ""),
         recipients=[headers.get("To", "")],
         date=date,
@@ -310,7 +310,7 @@ def get_email(message_id: str, account: str | None = None) -> Email | None:
     return Email(
         id=msg["id"],
         thread_id=msg["threadId"],
-        subject=headers.get("Subject", "(kein Betreff)"),
+        subject=headers.get("Subject", "(no subject)"),
         sender=headers.get("From", ""),
         recipients=recipients,
         cc=cc,
@@ -625,7 +625,7 @@ class DraftNotFoundError(Exception):
 
     def __init__(self, draft_id: str):
         self.draft_id = draft_id
-        self.message = f"Entwurf '{draft_id}' nicht gefunden"
+        self.message = f"Draft '{draft_id}' not found"
         super().__init__(self.message)
 
 
@@ -680,11 +680,11 @@ def create_draft(message: dict, account: str | None = None) -> dict:
     except HttpError as e:
         error_msg = str(e)
         if e.resp.status == 400:
-            error_msg = "Ungültiges Nachrichtenformat"
+            error_msg = "Invalid message format"
         elif e.resp.status == 403:
-            error_msg = "Keine Berechtigung zum Erstellen von Entwürfen"
+            error_msg = "Permission denied to create drafts"
         elif e.resp.status == 429:
-            error_msg = "Zu viele Anfragen - bitte warte einen Moment"
+            error_msg = "Too many requests - please wait a moment"
         raise SendError(error_msg, e.resp.status) from e
 
 
@@ -693,6 +693,8 @@ def list_drafts(
     max_results: int = 20,
 ) -> list[dict]:
     """List all drafts.
+
+    Uses batch requests to fetch draft details efficiently.
 
     Args:
         account: Account email to use. If None, uses resolved account.
@@ -708,12 +710,44 @@ def list_drafts(
 
     drafts = response.get("drafts", [])
 
-    # Fetch details for each draft
+    if not drafts:
+        return []
+
+    # Use batch request to fetch all draft details at once
     result = []
+    errors = []
+
+    def handle_response(_request_id: str, response: dict, exception: Exception | None):
+        if exception is not None:
+            errors.append(exception)
+            return
+
+        # Parse message headers
+        message = response.get("message", {})
+        headers = {h["name"]: h["value"] for h in message.get("payload", {}).get("headers", [])}
+
+        result.append({
+            "id": response["id"],
+            "message_id": message.get("id"),
+            "thread_id": message.get("threadId"),
+            "to": headers.get("To", ""),
+            "cc": headers.get("Cc", ""),
+            "subject": headers.get("Subject", "(no subject)"),
+            "snippet": message.get("snippet", ""),
+        })
+
+    batch = service.new_batch_http_request(callback=handle_response)
+
     for draft in drafts:
-        draft_detail = get_draft(draft["id"], account=account, include_body=False)
-        if draft_detail:
-            result.append(draft_detail)
+        batch.add(
+            service.users().drafts().get(
+                userId="me",
+                id=draft["id"],
+                format="metadata",
+            )
+        )
+
+    batch.execute()
 
     return result
 
@@ -761,7 +795,7 @@ def get_draft(
             "thread_id": message.get("threadId"),
             "to": headers.get("To", ""),
             "cc": headers.get("Cc", ""),
-            "subject": headers.get("Subject", "(kein Betreff)"),
+            "subject": headers.get("Subject", "(no subject)"),
             "snippet": message.get("snippet", ""),
         }
 
@@ -815,9 +849,9 @@ def send_draft(draft_id: str, account: str | None = None) -> dict:
             raise DraftNotFoundError(draft_id) from e
         error_msg = str(e)
         if e.resp.status == 400:
-            error_msg = "Ungültiger Entwurf - möglicherweise fehlen Empfänger"
+            error_msg = "Invalid draft - possibly missing recipients"
         elif e.resp.status == 403:
-            error_msg = "Keine Berechtigung zum Senden"
+            error_msg = "Permission denied to send"
         raise SendError(error_msg, e.resp.status) from e
 
 

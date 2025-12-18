@@ -36,7 +36,7 @@
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Unit test for create_draft() in tests/unit/test_draft.py
+- [x] T005 [P] [US1] Unit test for create_draft() in tests/unit/test_draft.py
 
 ### Implementation for User Story 1
 
@@ -57,7 +57,7 @@
 
 ### Tests for User Story 2
 
-- [ ] T010 [P] [US2] Unit test for reply draft with threadId in tests/unit/test_draft.py
+- [x] T010 [P] [US2] Unit test for reply draft with threadId in tests/unit/test_draft.py
 
 ### Implementation for User Story 2
 
@@ -77,7 +77,7 @@
 
 ### Tests for User Story 3
 
-- [ ] T014 [P] [US3] Unit test for list_drafts() in tests/unit/test_draft.py
+- [x] T014 [P] [US3] Unit test for list_drafts() in tests/unit/test_draft.py
 
 ### Implementation for User Story 3
 
@@ -99,7 +99,7 @@
 
 ### Tests for User Story 4
 
-- [ ] T020 [P] [US4] Unit test for get_draft() in tests/unit/test_draft.py
+- [x] T020 [P] [US4] Unit test for get_draft() in tests/unit/test_draft.py
 
 ### Implementation for User Story 4
 
@@ -121,7 +121,7 @@
 
 ### Tests for User Story 5
 
-- [ ] T026 [P] [US5] Unit test for send_draft() in tests/unit/test_draft.py
+- [x] T026 [P] [US5] Unit test for send_draft() in tests/unit/test_draft.py
 
 ### Implementation for User Story 5
 
@@ -142,7 +142,7 @@
 
 ### Tests for User Story 6
 
-- [ ] T031 [P] [US6] Unit test for delete_draft() in tests/unit/test_draft.py
+- [x] T031 [P] [US6] Unit test for delete_draft() in tests/unit/test_draft.py
 
 ### Implementation for User Story 6
 
@@ -160,11 +160,11 @@
 **Purpose**: Quality assurance and integration
 
 - [x] T036 [P] Add --account flag to all draft commands in src/gmail_cli/cli/draft.py
-- [ ] T037 [P] Integration test for complete draft workflow in tests/integration/test_draft_cli.py
-- [ ] T038 [P] Regression test for send/reply without --draft in tests/integration/test_draft_cli.py
+- [x] T037 [P] Integration test for complete draft workflow in tests/integration/test_draft_cli.py
+- [x] T038 [P] Regression test for send/reply without --draft in tests/integration/test_draft_cli.py
 - [x] T039 Run ruff check and ruff format on all modified files
 - [x] T040 Run pytest to verify all tests pass
-- [ ] T041 Run quickstart.md validation (manual test of documented commands)
+- [x] T041 Run quickstart.md validation (manual test of documented commands)
 
 ---
 
