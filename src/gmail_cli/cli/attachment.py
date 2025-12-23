@@ -186,6 +186,8 @@ def download_attachment_command(
             raise typer.Exit(1)
 
         output_path = output if output else attachment.filename
+        if Path(output_path).is_dir():
+            output_path = str(Path(output_path) / attachment.filename)
         success = download_attachment(message_id, attachment.id, output_path, account=account)
 
         if success:

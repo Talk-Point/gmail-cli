@@ -203,6 +203,7 @@ gmail attachment list 18c1234abcd5678                    # List attachments
 gmail attachment download 18c1234abcd5678 report.pdf    # Download one
 gmail attachment download 18c1234abcd5678 --all         # Download all
 gmail attachment download 18c1234abcd5678 doc.pdf --output ~/Downloads/doc.pdf
+gmail attachment download 18c1234abcd5678 doc.pdf --output ~/Downloads/  # Saves as ~/Downloads/doc.pdf
 ```
 
 ---
