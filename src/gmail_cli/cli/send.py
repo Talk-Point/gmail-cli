@@ -13,6 +13,7 @@ from gmail_cli.services.gmail import (
     create_draft,
     get_email,
     get_signature,
+    list_send_as_addresses,
     send_email,
 )
 from gmail_cli.utils.html import html_to_text
@@ -25,6 +26,35 @@ from gmail_cli.utils.output import (
     print_json_error,
     print_success,
 )
+
+
+def _validate_send_as_address(from_addr: str, account: str | None = None) -> None:
+    """Validate that the Send-As address is configured and verified.
+
+    Args:
+        from_addr: The Send-As email address to validate.
+        account: Account email to use for API call.
+
+    Raises:
+        typer.Exit: If the address is not valid.
+    """
+    send_as_addresses = list_send_as_addresses(account=account)
+    valid_emails = [sa["email"].lower() for sa in send_as_addresses]
+
+    if from_addr.lower() not in valid_emails:
+        if is_json_mode():
+            print_json_error(
+                "INVALID_SEND_AS",
+                f"'{from_addr}' ist keine gültige Send-As Adresse. "
+                f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
+            )
+        else:
+            print_error(
+                f"'{from_addr}' ist keine gültige Send-As Adresse",
+                details=f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
+            )
+        raise typer.Exit(1)
+
 
 # Account option type
 AccountOption = Annotated[
@@ -115,6 +145,13 @@ def send_command(
             help="Save as draft instead of sending.",
         ),
     ] = False,
+    from_addr: Annotated[
+        str | None,
+        typer.Option(
+            "--from",
+            help="Send-As address to send from (must be configured in Gmail settings).",
+        ),
+    ] = None,
     account: AccountOption = None,
 ) -> None:
     """Send a new email.
@@ -124,6 +161,7 @@ def send_command(
 
     Use --no-signature to exclude the signature.
     Use --plain to send as plain text without Markdown conversion.
+    Use --from to send from an alternative Send-As address.
 
     Examples:
         gmail send --to recipient@example.com --subject "Hello" --body "Hi there!"
@@ -132,6 +170,7 @@ def send_command(
         gmail send --to x@x.com --subject "Work" --body "From work" --account work@company.com
         gmail send --to x@x.com --subject "Test" --body "**Bold**" --plain
         gmail send --to x@x.com --subject "Quick note" --body "Hi" --no-signature
+        gmail send --to x@x.com --subject "Hi" --body "From alias" --from alias@example.com
     """
     # Get body content
     if body_file:
@@ -151,6 +190,10 @@ def send_command(
         else:
             print_error("E-Mail-Text erforderlich (--body oder --body-file)")
         raise typer.Exit(1)
+
+    # Validate Send-As address if provided
+    if from_addr:
+        _validate_send_as_address(from_addr, account=account)
 
     # Prepare HTML body: Markdown conversion (default) or plain text
     html_body = None
@@ -183,6 +226,7 @@ def send_command(
         bcc=bcc,
         attachments=attach,
         html_body=html_body,
+        from_addr=from_addr,
     )
 
     # Send or save as draft
@@ -300,6 +344,13 @@ def reply_command(
             help="Save as draft instead of sending.",
         ),
     ] = False,
+    from_addr: Annotated[
+        str | None,
+        typer.Option(
+            "--from",
+            help="Send-As address to send from (must be configured in Gmail settings).",
+        ),
+    ] = None,
     account: AccountOption = None,
 ) -> None:
     """Reply to an email.
@@ -310,6 +361,7 @@ def reply_command(
     Use --no-signature to exclude the signature.
     Use --plain to send as plain text without Markdown conversion.
     Use --draft to save the reply as a draft instead of sending it.
+    Use --from to reply from an alternative Send-As address.
 
     Examples:
         gmail reply 18c1234abcd5678 --body "Thanks for your message!"
@@ -320,6 +372,7 @@ def reply_command(
         gmail reply 18c1234abcd5678 --body "**Bold reply**" --plain
         gmail reply 18c1234abcd5678 --body "Quick reply" --no-signature
         gmail reply 18c1234abcd5678 --body "Review this later" --draft
+        gmail reply 18c1234abcd5678 --body "From alias" --from alias@example.com
     """
     # Get original email
     email = get_email(message_id, account=account)
@@ -349,6 +402,10 @@ def reply_command(
         else:
             print_error("Antwort-Text erforderlich (--body oder --body-file)")
         raise typer.Exit(1)
+
+    # Validate Send-As address if provided
+    if from_addr:
+        _validate_send_as_address(from_addr, account=account)
 
     # Prepare HTML body: Markdown conversion (default) or plain text
     html_body = None
@@ -412,6 +469,7 @@ def reply_command(
         cc=reply_cc if reply_cc else None,
         attachments=attach,
         html_body=html_body,
+        from_addr=from_addr,
     )
 
     # Send or save as draft
@@ -463,3 +521,36 @@ def reply_command(
             )
             print_error(action, details=e.message)
         raise typer.Exit(1)
+
+
+@require_auth
+def sendas_command(
+    account: AccountOption = None,
+) -> None:
+    """List available Send-As addresses.
+
+    Shows all verified email addresses that can be used as sender address.
+    These must be configured in Gmail settings under "Send mail as".
+
+    Examples:
+        gmail sendas
+        gmail sendas --json
+        gmail sendas --account work@company.com
+    """
+    addresses = list_send_as_addresses(account=account)
+
+    if is_json_mode():
+        print_json({"sendas": addresses, "count": len(addresses)})
+    else:
+        if not addresses:
+            print_info("Keine Send-As Adressen konfiguriert.")
+            return
+
+        print_info(f"Send-As Adressen ({len(addresses)}):")
+        for addr in addresses:
+            email = addr["email"]
+            name = addr.get("displayName", "")
+            primary = " (primär)" if addr.get("isPrimary") else ""
+            default = " [Standard]" if addr.get("isDefault") else ""
+            display = f"{name} <{email}>" if name else email
+            print(f"  {display}{primary}{default}")

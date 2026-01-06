@@ -604,3 +604,186 @@ class TestReplyCommand:
             mock_sig.assert_not_called()
             call_kwargs = mock_compose.call_args.kwargs
             assert "--" not in call_kwargs["body"]  # No signature separator
+
+
+class TestSendAsCommand:
+    """Tests for gmail sendas command."""
+
+    def test_sendas_requires_authentication(self) -> None:
+        """Test that sendas requires authentication."""
+        with patch("gmail_cli.cli.auth.is_authenticated") as mock_auth:
+            mock_auth.return_value = False
+
+            result = runner.invoke(app, ["sendas"])
+
+            assert result.exit_code == 1
+
+    def test_sendas_lists_addresses(self) -> None:
+        """Test listing Send-As addresses."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.list_send_as_addresses") as mock_list,
+        ):
+            mock_auth.return_value = True
+            mock_list.return_value = [
+                {
+                    "email": "primary@example.com",
+                    "displayName": "Primary User",
+                    "isPrimary": True,
+                    "isDefault": True,
+                },
+                {
+                    "email": "alias@example.com",
+                    "displayName": "",
+                    "isPrimary": False,
+                    "isDefault": False,
+                },
+            ]
+
+            result = runner.invoke(app, ["sendas"])
+
+            assert result.exit_code == 0
+            assert "primary@example.com" in result.output
+            assert "alias@example.com" in result.output
+            assert "(primär)" in result.output
+
+    def test_sendas_empty_list(self) -> None:
+        """Test handling empty Send-As list."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.list_send_as_addresses") as mock_list,
+        ):
+            mock_auth.return_value = True
+            mock_list.return_value = []
+
+            result = runner.invoke(app, ["sendas"])
+
+            assert result.exit_code == 0
+            assert "Keine Send-As Adressen" in result.output
+
+    def test_sendas_json_output(self) -> None:
+        """Test JSON output for sendas command."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.list_send_as_addresses") as mock_list,
+        ):
+            mock_auth.return_value = True
+            mock_list.return_value = [
+                {
+                    "email": "primary@example.com",
+                    "displayName": "Primary",
+                    "isPrimary": True,
+                    "isDefault": True,
+                },
+            ]
+
+            result = runner.invoke(app, ["--json", "sendas"])
+
+            assert result.exit_code == 0
+            assert '"sendas"' in result.output
+            assert '"count": 1' in result.output
+
+
+class TestSendWithFromOption:
+    """Tests for send command with --from option."""
+
+    def test_send_with_valid_from_address(self) -> None:
+        """Test sending with valid --from address."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.list_send_as_addresses") as mock_list,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_list.return_value = [
+                {"email": "alias@example.com", "isPrimary": False},
+            ]
+            mock_sig.return_value = None
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi",
+                    "--from",
+                    "alias@example.com",
+                ],
+            )
+
+            assert result.exit_code == 0
+            mock_compose.assert_called_once()
+            call_kwargs = mock_compose.call_args.kwargs
+            assert call_kwargs["from_addr"] == "alias@example.com"
+
+    def test_send_with_invalid_from_address(self) -> None:
+        """Test sending with invalid --from address fails."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.list_send_as_addresses") as mock_list,
+        ):
+            mock_auth.return_value = True
+            mock_list.return_value = [
+                {"email": "valid@example.com", "isPrimary": True},
+            ]
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi",
+                    "--from",
+                    "invalid@example.com",
+                ],
+            )
+
+            assert result.exit_code == 1
+            assert "ist keine gültige Send-As Adresse" in result.output
+            assert "valid@example.com" in result.output
+
+    def test_send_from_address_case_insensitive(self) -> None:
+        """Test that --from address validation is case insensitive."""
+        with (
+            patch("gmail_cli.cli.auth.is_authenticated") as mock_auth,
+            patch("gmail_cli.cli.send.list_send_as_addresses") as mock_list,
+            patch("gmail_cli.cli.send.send_email") as mock_send,
+            patch("gmail_cli.cli.send.compose_email") as mock_compose,
+            patch("gmail_cli.cli.send.get_signature") as mock_sig,
+        ):
+            mock_auth.return_value = True
+            mock_list.return_value = [
+                {"email": "Alias@Example.COM", "isPrimary": False},
+            ]
+            mock_sig.return_value = None
+            mock_compose.return_value = {"raw": "test"}
+            mock_send.return_value = {"id": "sent123", "threadId": "thread123"}
+
+            result = runner.invoke(
+                app,
+                [
+                    "send",
+                    "--to",
+                    "recipient@example.com",
+                    "--subject",
+                    "Test",
+                    "--body",
+                    "Hi",
+                    "--from",
+                    "alias@example.com",
+                ],
+            )
+
+            assert result.exit_code == 0
