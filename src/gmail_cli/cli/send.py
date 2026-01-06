@@ -27,6 +27,35 @@ from gmail_cli.utils.output import (
     print_success,
 )
 
+
+def _validate_send_as_address(from_addr: str, account: str | None = None) -> None:
+    """Validate that the Send-As address is configured and verified.
+
+    Args:
+        from_addr: The Send-As email address to validate.
+        account: Account email to use for API call.
+
+    Raises:
+        typer.Exit: If the address is not valid.
+    """
+    send_as_addresses = list_send_as_addresses(account=account)
+    valid_emails = [sa["email"].lower() for sa in send_as_addresses]
+
+    if from_addr.lower() not in valid_emails:
+        if is_json_mode():
+            print_json_error(
+                "INVALID_SEND_AS",
+                f"'{from_addr}' ist keine gültige Send-As Adresse. "
+                f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
+            )
+        else:
+            print_error(
+                f"'{from_addr}' ist keine gültige Send-As Adresse",
+                details=f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
+            )
+        raise typer.Exit(1)
+
+
 # Account option type
 AccountOption = Annotated[
     str | None,
@@ -164,21 +193,7 @@ def send_command(
 
     # Validate Send-As address if provided
     if from_addr:
-        send_as_addresses = list_send_as_addresses(account=account)
-        valid_emails = [sa["email"].lower() for sa in send_as_addresses]
-        if from_addr.lower() not in valid_emails:
-            if is_json_mode():
-                print_json_error(
-                    "INVALID_SEND_AS",
-                    f"'{from_addr}' ist keine gültige Send-As Adresse. "
-                    f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
-                )
-            else:
-                print_error(
-                    f"'{from_addr}' ist keine gültige Send-As Adresse",
-                    details=f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
-                )
-            raise typer.Exit(1)
+        _validate_send_as_address(from_addr, account=account)
 
     # Prepare HTML body: Markdown conversion (default) or plain text
     html_body = None
@@ -390,21 +405,7 @@ def reply_command(
 
     # Validate Send-As address if provided
     if from_addr:
-        send_as_addresses = list_send_as_addresses(account=account)
-        valid_emails = [sa["email"].lower() for sa in send_as_addresses]
-        if from_addr.lower() not in valid_emails:
-            if is_json_mode():
-                print_json_error(
-                    "INVALID_SEND_AS",
-                    f"'{from_addr}' ist keine gültige Send-As Adresse. "
-                    f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
-                )
-            else:
-                print_error(
-                    f"'{from_addr}' ist keine gültige Send-As Adresse",
-                    details=f"Verfügbar: {', '.join(valid_emails) if valid_emails else 'keine'}",
-                )
-            raise typer.Exit(1)
+        _validate_send_as_address(from_addr, account=account)
 
     # Prepare HTML body: Markdown conversion (default) or plain text
     html_body = None
