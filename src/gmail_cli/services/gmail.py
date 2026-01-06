@@ -446,6 +446,37 @@ def download_attachment(
     return True
 
 
+def list_send_as_addresses(account: str | None = None) -> list[dict]:
+    """List all Send-As addresses for this account.
+
+    Args:
+        account: Account email to use. If None, uses resolved account.
+
+    Returns:
+        List of Send-As address dicts with email, displayName, isPrimary, isDefault.
+    """
+    service = get_gmail_service(account=account)
+
+    try:
+        request = service.users().settings().sendAs().list(userId="me")
+        response = _execute_with_retry(request, account=account)
+
+        send_as_list = response.get("sendAs", [])
+        return [
+            {
+                "email": sa.get("sendAsEmail", ""),
+                "displayName": sa.get("displayName", ""),
+                "isPrimary": sa.get("isPrimary", False),
+                "isDefault": sa.get("isDefault", False),
+                "verificationStatus": sa.get("verificationStatus", ""),
+            }
+            for sa in send_as_list
+            if sa.get("verificationStatus") == "accepted"
+        ]
+    except HttpError:
+        return []
+
+
 def get_signature(account: str | None = None) -> str | None:
     """Get the user's Gmail signature.
 
@@ -481,6 +512,7 @@ def compose_email(
     bcc: list[str] | None = None,
     attachments: list[str] | None = None,
     html_body: str | None = None,
+    from_addr: str | None = None,
 ) -> dict:
     """Compose an email message.
 
@@ -492,6 +524,7 @@ def compose_email(
         bcc: List of BCC recipients.
         attachments: List of file paths to attach.
         html_body: Optional HTML version of the body.
+        from_addr: Optional Send-As address to send from.
 
     Returns:
         Message dict ready for Gmail API.
@@ -500,6 +533,8 @@ def compose_email(
     msg["To"] = ", ".join(to)
     msg["Subject"] = subject
 
+    if from_addr:
+        msg["From"] = from_addr
     if cc:
         msg["Cc"] = ", ".join(cc)
     if bcc:
@@ -549,6 +584,7 @@ def compose_reply(
     cc: list[str] | None = None,
     attachments: list[str] | None = None,
     html_body: str | None = None,
+    from_addr: str | None = None,
 ) -> dict:
     """Compose a reply email.
 
@@ -562,6 +598,7 @@ def compose_reply(
         cc: List of CC recipients.
         attachments: List of file paths to attach.
         html_body: Optional HTML version of the body.
+        from_addr: Optional Send-As address to send from.
 
     Returns:
         Message dict ready for Gmail API with thread info.
@@ -570,6 +607,8 @@ def compose_reply(
     msg["To"] = ", ".join(to)
     msg["Subject"] = subject
 
+    if from_addr:
+        msg["From"] = from_addr
     if cc:
         msg["Cc"] = ", ".join(cc)
 
