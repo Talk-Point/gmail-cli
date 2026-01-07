@@ -11,7 +11,7 @@ from gmail_cli.cli.auth import auth_app
 from gmail_cli.cli.draft import draft_app
 from gmail_cli.cli.read import read_command
 from gmail_cli.cli.search import search_command
-from gmail_cli.cli.send import reply_command, send_command
+from gmail_cli.cli.send import reply_command, send_command, sendas_command
 from gmail_cli.utils.output import set_json_mode
 
 app = typer.Typer(
@@ -61,6 +61,7 @@ app.command("search")(search_command)
 app.command("read")(read_command)
 app.command("send")(send_command)
 app.command("reply")(reply_command)
+app.command("sendas")(sendas_command)
 
 
 if __name__ == "__main__":
