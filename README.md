@@ -125,6 +125,17 @@ gmail read 18c1234abcd5678           # Read email by ID
 gmail read 18c1234abcd5678 --raw     # Show raw content
 ```
 
+### Mark Read/Unread
+
+Mark emails as read or unread.
+
+```bash
+gmail mark-read 18c1234abcd5678                    # Mark as read
+gmail mark-unread 18c1234abcd5678                  # Mark as unread
+gmail mark-read 18c1234 18c5678 18c9012            # Bulk operation
+gmail mark-read 18c1234abcd5678 --account work@x.com  # Specific account
+```
+
 ### Send
 
 Compose and send emails. **Markdown is converted to HTML automatically.**
@@ -340,6 +351,8 @@ scp credentials_export.json server:/path/to/
 Gmail CLI requests these scopes:
 - `gmail.readonly` - Read emails
 - `gmail.send` - Send emails
+- `gmail.compose` - Create drafts
+- `gmail.modify` - Mark emails as read/unread
 - `gmail.settings.basic` - Read signature settings
 
 ---
