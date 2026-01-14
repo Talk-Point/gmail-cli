@@ -74,6 +74,14 @@ app.command("attachments", help="List attachments (shortcut for 'attachment list
     list_attachments
 )
 
+# Top-level shortcuts for common attachment operations
+app.command("download", help="Download attachment (shortcut for 'attachment download').")(
+    download_attachment_command
+)
+app.command("attachments", help="List attachments (shortcut for 'attachment list').")(
+    list_attachments
+)
+
 
 if __name__ == "__main__":
     app()
