@@ -6,7 +6,7 @@ import typer
 
 from gmail_cli import __version__
 from gmail_cli.cli.accounts import accounts_app
-from gmail_cli.cli.attachment import attachment_app
+from gmail_cli.cli.attachment import attachment_app, download_attachment_command, list_attachments
 from gmail_cli.cli.auth import auth_app
 from gmail_cli.cli.draft import draft_app
 from gmail_cli.cli.read import read_command
@@ -62,6 +62,12 @@ app.command("read")(read_command)
 app.command("send")(send_command)
 app.command("reply")(reply_command)
 app.command("sendas")(sendas_command)
+
+# Top-level shortcuts for common attachment operations
+app.command("download", help="Download attachment (shortcut for 'attachment download').")(
+    download_attachment_command
+)
+app.command("attachments", help="List attachments (shortcut for 'attachment list').")(list_attachments)
 
 
 if __name__ == "__main__":

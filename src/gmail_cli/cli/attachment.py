@@ -99,11 +99,11 @@ def download_attachment_command(
         ),
     ],
     filename: Annotated[
-        str,
+        str | None,
         typer.Argument(
-            help="The attachment filename to download.",
+            help="The attachment filename to download (optional with --all).",
         ),
-    ],
+    ] = None,
     output: Annotated[
         str | None,
         typer.Option(
@@ -128,8 +128,17 @@ def download_attachment_command(
         gmail attachment download 18c1234abcd5678 document.pdf
         gmail attachment download 18c1234abcd5678 document.pdf --output ~/Downloads/doc.pdf
         gmail attachment download 18c1234abcd5678 --all
+        gmail attachment download 18c1234abcd5678 --all --output ~/Downloads/
         gmail attachment download 18c1234abcd5678 doc.pdf --account work@company.com
     """
+    # Validate: either filename or --all must be provided
+    if not all_attachments and not filename:
+        if is_json_mode():
+            print_json_error("MISSING_ARGUMENT", "Bitte Dateiname angeben oder --all verwenden")
+        else:
+            print_error("Bitte Dateiname angeben oder --all verwenden")
+        raise typer.Exit(1)
+
     email = get_email(message_id, account=account)
 
     if not email:
