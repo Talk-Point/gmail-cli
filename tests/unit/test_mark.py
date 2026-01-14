@@ -30,9 +30,7 @@ class TestMarkFunctions:
 
             assert result["id"] == "18c5a2b3d4e5f6a7"
             mock_gmail_service.users.return_value.messages.return_value.modify.assert_called_once()
-            call_args = (
-                mock_gmail_service.users.return_value.messages.return_value.modify.call_args
-            )
+            call_args = mock_gmail_service.users.return_value.messages.return_value.modify.call_args
             assert call_args.kwargs["body"]["removeLabelIds"] == ["UNREAD"]
 
     def test_mark_as_unread_adds_unread_label(self, mock_gmail_service: MagicMock) -> None:
@@ -56,14 +54,10 @@ class TestMarkFunctions:
 
             assert result["id"] == "18c5a2b3d4e5f6a7"
             mock_gmail_service.users.return_value.messages.return_value.modify.assert_called_once()
-            call_args = (
-                mock_gmail_service.users.return_value.messages.return_value.modify.call_args
-            )
+            call_args = mock_gmail_service.users.return_value.messages.return_value.modify.call_args
             assert call_args.kwargs["body"]["addLabelIds"] == ["UNREAD"]
 
-    def test_mark_as_read_raises_message_not_found(
-        self, mock_gmail_service: MagicMock
-    ) -> None:
+    def test_mark_as_read_raises_message_not_found(self, mock_gmail_service: MagicMock) -> None:
         """Test that mark_as_read raises MessageNotFoundError for non-existent message."""
         # Setup mock to raise 404
         mock_modify = MagicMock()
@@ -133,9 +127,7 @@ class TestModifyMessageLabels:
             )
 
             assert result["id"] == "msg1"
-            call_args = (
-                mock_gmail_service.users.return_value.messages.return_value.modify.call_args
-            )
+            call_args = mock_gmail_service.users.return_value.messages.return_value.modify.call_args
             assert call_args.kwargs["body"]["addLabelIds"] == ["STARRED", "IMPORTANT"]
             assert call_args.kwargs["body"]["removeLabelIds"] == ["UNREAD"]
 
@@ -154,9 +146,7 @@ class TestModifyMessageLabels:
 
             modify_message_labels("msg1", add_labels=["STARRED"])
 
-            call_args = (
-                mock_gmail_service.users.return_value.messages.return_value.modify.call_args
-            )
+            call_args = mock_gmail_service.users.return_value.messages.return_value.modify.call_args
             assert "addLabelIds" in call_args.kwargs["body"]
             assert "removeLabelIds" not in call_args.kwargs["body"]
 
@@ -175,8 +165,6 @@ class TestModifyMessageLabels:
 
             modify_message_labels("msg1", remove_labels=["UNREAD"])
 
-            call_args = (
-                mock_gmail_service.users.return_value.messages.return_value.modify.call_args
-            )
+            call_args = mock_gmail_service.users.return_value.messages.return_value.modify.call_args
             assert "removeLabelIds" in call_args.kwargs["body"]
             assert "addLabelIds" not in call_args.kwargs["body"]
