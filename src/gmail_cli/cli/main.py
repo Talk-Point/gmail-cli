@@ -67,7 +67,9 @@ app.command("sendas")(sendas_command)
 app.command("download", help="Download attachment (shortcut for 'attachment download').")(
     download_attachment_command
 )
-app.command("attachments", help="List attachments (shortcut for 'attachment list').")(list_attachments)
+app.command("attachments", help="List attachments (shortcut for 'attachment list').")(
+    list_attachments
+)
 
 
 if __name__ == "__main__":
