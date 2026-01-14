@@ -917,3 +917,97 @@ def delete_draft(draft_id: str, account: str | None = None) -> None:
         if e.resp.status == 404:
             raise DraftNotFoundError(draft_id) from e
         raise
+
+
+class MessageNotFoundError(Exception):
+    """Error when message is not found."""
+
+    def __init__(self, message_id: str):
+        self.message_id = message_id
+        self.message = f"Nachricht '{message_id}' nicht gefunden"
+        super().__init__(self.message)
+
+
+def modify_message_labels(
+    message_id: str,
+    add_labels: list[str] | None = None,
+    remove_labels: list[str] | None = None,
+    account: str | None = None,
+) -> dict:
+    """Modify labels on a message.
+
+    Args:
+        message_id: Gmail message ID.
+        add_labels: Labels to add to the message.
+        remove_labels: Labels to remove from the message.
+        account: Account email to use. If None, uses resolved account.
+
+    Returns:
+        API response with updated message info.
+
+    Raises:
+        MessageNotFoundError: If message is not found.
+    """
+    service = get_gmail_service(account=account)
+
+    body = {}
+    if add_labels:
+        body["addLabelIds"] = add_labels
+    if remove_labels:
+        body["removeLabelIds"] = remove_labels
+
+    try:
+        request = (
+            service.users()
+            .messages()
+            .modify(
+                userId="me",
+                id=message_id,
+                body=body,
+            )
+        )
+        return _execute_with_retry(request, account=account)
+    except HttpError as e:
+        if e.resp.status == 404:
+            raise MessageNotFoundError(message_id) from e
+        raise
+
+
+def mark_as_read(message_id: str, account: str | None = None) -> dict:
+    """Mark a message as read by removing UNREAD label.
+
+    Args:
+        message_id: Gmail message ID.
+        account: Account email to use. If None, uses resolved account.
+
+    Returns:
+        API response with updated message info.
+
+    Raises:
+        MessageNotFoundError: If message is not found.
+    """
+    return modify_message_labels(
+        message_id,
+        remove_labels=["UNREAD"],
+        account=account,
+    )
+
+
+def mark_as_unread(message_id: str, account: str | None = None) -> dict:
+    """Mark a message as unread by adding UNREAD label.
+
+    Args:
+        message_id: Gmail message ID.
+        account: Account email to use. If None, uses resolved account.
+
+    Returns:
+        API response with updated message info.
+
+    Raises:
+        MessageNotFoundError: If message is not found.
+    """
+    return modify_message_labels(
+        message_id,
+        add_labels=["UNREAD"],
+        account=account,
+    )
