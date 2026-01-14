@@ -1,4 +1,4 @@
-"""Mark CLI command for marking emails as read/unread."""
+"""Mark CLI commands for marking emails as read/unread."""
 
 from typing import Annotated
 
@@ -15,7 +15,6 @@ from gmail_cli.utils.output import (
     is_json_mode,
     print_error,
     print_json,
-    print_json_error,
     print_success,
 )
 
@@ -30,55 +29,12 @@ AccountOption = Annotated[
 ]
 
 
-@require_auth
-def mark_command(
-    message_ids: Annotated[
-        list[str],
-        typer.Argument(
-            help="Message ID(s) to mark.",
-        ),
-    ],
-    read: Annotated[
-        bool,
-        typer.Option(
-            "--read",
-            "-r",
-            help="Mark as read.",
-        ),
-    ] = False,
-    unread: Annotated[
-        bool,
-        typer.Option(
-            "--unread",
-            "-u",
-            help="Mark as unread.",
-        ),
-    ] = False,
-    account: AccountOption = None,
-) -> None:
-    """Mark email(s) as read or unread.
-
-    Examples:
-        gmail mark 18c1234abcd5678 --read
-        gmail mark 18c1234abcd5678 --unread
-        gmail mark 18c1234 18c5678 18c9012 --read
-        gmail mark 18c1234abcd5678 --read --account work@company.com
-    """
-    # Validate: exactly one of --read or --unread must be specified
-    if read == unread:
-        if is_json_mode():
-            print_json_error(
-                "INVALID_ARGUMENTS",
-                "Specify either --read or --unread (not both, not neither)",
-            )
-        else:
-            print_error("Specify either --read or --unread (not both, not neither)")
-        raise typer.Exit(1)
-
+def _mark_messages(message_ids: list[str], account: str | None, as_read: bool) -> None:
+    """Internal helper to mark messages as read or unread."""
     account = resolve_account(account)
-    action = "read" if read else "unread"
-    action_de = "gelesen" if read else "ungelesen"
-    mark_fn = mark_as_read if read else mark_as_unread
+    action = "read" if as_read else "unread"
+    action_de = "gelesen" if as_read else "ungelesen"
+    mark_fn = mark_as_read if as_read else mark_as_unread
 
     results = []
     success_count = 0
@@ -88,7 +44,7 @@ def mark_command(
         try:
             mark_fn(msg_id, account=account)
             success_count += 1
-            results.append({"id": msg_id, "status": "success", "action": action})
+            results.append({"id": msg_id, "status": "success"})
             if not is_json_mode():
                 print_success(f"{msg_id} als {action_de} markiert")
         except MessageNotFoundError:
@@ -113,8 +69,43 @@ def mark_command(
             }
         )
     elif len(message_ids) > 1:
-        # Summary for bulk operations
         typer.echo(f"\n{success_count}/{len(message_ids)} Nachrichten als {action_de} markiert")
 
     if error_count > 0:
         raise typer.Exit(1)
+
+
+@require_auth
+def mark_read_command(
+    message_ids: Annotated[
+        list[str],
+        typer.Argument(help="Message ID(s) to mark as read."),
+    ],
+    account: AccountOption = None,
+) -> None:
+    """Mark email(s) as read.
+
+    Examples:
+        gmail mark-read 18c1234abcd5678
+        gmail mark-read 18c1234 18c5678 18c9012
+        gmail mark-read 18c1234abcd5678 --account work@company.com
+    """
+    _mark_messages(message_ids, account, as_read=True)
+
+
+@require_auth
+def mark_unread_command(
+    message_ids: Annotated[
+        list[str],
+        typer.Argument(help="Message ID(s) to mark as unread."),
+    ],
+    account: AccountOption = None,
+) -> None:
+    """Mark email(s) as unread.
+
+    Examples:
+        gmail mark-unread 18c1234abcd5678
+        gmail mark-unread 18c1234 18c5678 18c9012
+        gmail mark-unread 18c1234abcd5678 --account work@company.com
+    """
+    _mark_messages(message_ids, account, as_read=False)

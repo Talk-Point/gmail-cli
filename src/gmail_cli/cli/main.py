@@ -9,7 +9,7 @@ from gmail_cli.cli.accounts import accounts_app
 from gmail_cli.cli.attachment import attachment_app, download_attachment_command, list_attachments
 from gmail_cli.cli.auth import auth_app
 from gmail_cli.cli.draft import draft_app
-from gmail_cli.cli.mark import mark_command
+from gmail_cli.cli.mark import mark_read_command, mark_unread_command
 from gmail_cli.cli.read import read_command
 from gmail_cli.cli.search import search_command
 from gmail_cli.cli.send import reply_command, send_command, sendas_command
@@ -63,7 +63,8 @@ app.command("read")(read_command)
 app.command("send")(send_command)
 app.command("reply")(reply_command)
 app.command("sendas")(sendas_command)
-app.command("mark")(mark_command)
+app.command("mark-read")(mark_read_command)
+app.command("mark-unread")(mark_unread_command)
 
 # Top-level shortcuts for common attachment operations
 app.command("download", help="Download attachment (shortcut for 'attachment download').")(
