@@ -48,6 +48,8 @@ def list_command(
         typer.Option(
             "--limit",
             "-n",
+            "--max-results",
+            "--count",
             help="Maximum number of drafts to show.",
         ),
     ] = 20,

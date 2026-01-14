@@ -91,6 +91,8 @@ def search_command(
         typer.Option(
             "--limit",
             "-n",
+            "--max-results",
+            "--count",
             help="Maximum number of results to return.",
         ),
     ] = 20,
