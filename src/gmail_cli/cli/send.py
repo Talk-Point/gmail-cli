@@ -430,12 +430,8 @@ def reply_command(
                 html_body = f"<div>{body_html}</div><br><div>--</div>{sig}"
 
     # Determine recipients
-    # Extract email from "Name <email>" format
-    sender_email = email.sender
-    if "<" in sender_email:
-        sender_email = sender_email.split("<")[1].rstrip(">")
-
-    recipients = [sender_email]
+    # Use reply_to_email which prefers Reply-To header over From (standard email behavior)
+    recipients = [email.reply_to_email]
 
     if reply_all:
         # Add CC recipients
