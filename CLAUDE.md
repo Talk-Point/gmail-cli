@@ -34,4 +34,30 @@ Python 3.13+: Follow standard conventions
 
 
 <!-- MANUAL ADDITIONS START -->
+
+## Release Process
+
+1. **Version bump** - Update version in both files:
+   - `src/gmail_cli/__init__.py` → `__version__ = "X.Y.Z"`
+   - `pyproject.toml` → `version = "X.Y.Z"`
+
+2. **Commit & Push** to develop:
+   ```bash
+   git add src/gmail_cli/__init__.py pyproject.toml
+   git commit -m "chore: Bump version to X.Y.Z"
+   git push
+   ```
+
+3. **Create PR** from develop → master:
+   ```bash
+   gh pr create --base master --head develop --title "Release vX.Y.Z"
+   ```
+
+4. **Merge PR** after CI passes
+
+5. **Create GitHub Release** with tag:
+   ```bash
+   gh release create vX.Y.Z --target master --title "vX.Y.Z" --notes "Release notes here"
+   ```
+
 <!-- MANUAL ADDITIONS END -->

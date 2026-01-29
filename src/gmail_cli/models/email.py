@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from gmail_cli.utils.email_utils import extract_email, extract_name
+
 if TYPE_CHECKING:
     from gmail_cli.models.attachment import Attachment
 
@@ -28,6 +30,7 @@ class Email:
     is_read: bool = True
     message_id: str = ""
     references: list[str] = field(default_factory=list)
+    reply_to: str | None = None
 
     @property
     def has_attachments(self) -> bool:
@@ -37,13 +40,20 @@ class Email:
     @property
     def sender_name(self) -> str:
         """Extract only the name from the sender."""
-        if "<" in self.sender:
-            return self.sender.split("<")[0].strip().strip('"')
-        return self.sender
+        return extract_name(self.sender)
 
     @property
     def sender_email(self) -> str:
         """Extract only the email address from the sender."""
-        if "<" in self.sender and ">" in self.sender:
-            return self.sender.split("<")[1].split(">")[0]
-        return self.sender
+        return extract_email(self.sender)
+
+    @property
+    def reply_to_email(self) -> str:
+        """Get the email address to reply to.
+
+        Returns Reply-To address if set, otherwise falls back to sender.
+        This is standard email behavior.
+        """
+        if self.reply_to:
+            return extract_email(self.reply_to)
+        return self.sender_email
