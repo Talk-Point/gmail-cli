@@ -323,6 +323,7 @@ def get_email(message_id: str, account: str | None = None) -> Email | None:
         is_read="UNREAD" not in msg.get("labelIds", []),
         message_id=headers.get("Message-ID", ""),
         references=[r.strip() for r in headers.get("References", "").split() if r.strip()],
+        reply_to=headers.get("Reply-To"),
     )
 
 

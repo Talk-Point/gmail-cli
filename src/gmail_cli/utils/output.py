@@ -174,11 +174,7 @@ def print_search_results(result: Any) -> None:
         status = " " if email.is_read else "[bold blue]●[/bold blue]"
 
         # Format sender (extract name or email)
-        sender = email.sender
-        if "<" in sender:
-            # Extract name before email, fallback to email if no name
-            name_part = sender.split("<")[0].strip().strip('"')
-            sender = name_part or sender.split("<")[1].rstrip(">")
+        sender = email.sender_name
 
         # Truncate if needed
         if len(sender) > 28:
