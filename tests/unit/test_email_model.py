@@ -2,8 +2,6 @@
 
 from datetime import datetime, timezone
 
-import pytest
-
 from gmail_cli.models.email import Email
 
 

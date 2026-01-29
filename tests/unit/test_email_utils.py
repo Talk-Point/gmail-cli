@@ -1,7 +1,5 @@
 """Tests for email address parsing utilities."""
 
-import pytest
-
 from gmail_cli.utils.email_utils import extract_email, extract_name, parse_email_address
 
 
