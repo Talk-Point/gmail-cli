@@ -24,6 +24,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/gmail.compose",  # Required for drafts
     "https://www.googleapis.com/auth/gmail.insert",  # Required for messages.insert
     "https://www.googleapis.com/auth/gmail.settings.basic",
+    "https://www.googleapis.com/auth/gmail.modify",  # Required for marking read/unread
 ]
 
 
