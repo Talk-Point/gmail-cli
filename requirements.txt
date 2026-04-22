@@ -91,7 +91,7 @@ requests==2.32.5
     #   requests-oauthlib
 requests-oauthlib==2.0.0
     # via google-auth-oauthlib
-rich==14.3.3
+rich==15.0.0
     # via
     #   gmail-cli (pyproject.toml)
     #   typer
