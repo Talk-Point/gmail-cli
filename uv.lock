@@ -378,7 +378,7 @@ wheels = [
 
 [[package]]
 name = "gmail-cli"
-version = "0.15.15"
+version = "0.15.16"
 source = { editable = "." }
 dependencies = [
     { name = "google-api-python-client" },
