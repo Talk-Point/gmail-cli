@@ -64,7 +64,7 @@ more-itertools==10.8.0
     #   jaraco-functools
 oauthlib==3.3.1
     # via requests-oauthlib
-proto-plus==1.27.1
+proto-plus==1.28.0
     # via google-api-core
 protobuf==6.33.6
     # via
