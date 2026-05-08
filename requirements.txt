@@ -54,7 +54,7 @@ markdown==3.10.2
     # via
     #   gmail-cli (pyproject.toml)
     #   pymdown-extensions
-markdown-it-py==4.0.0
+markdown-it-py==4.2.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
