@@ -79,7 +79,7 @@ pycparser==3.0
     # via cffi
 pygments==2.19.2
     # via rich
-pymdown-extensions==10.21
+pymdown-extensions==10.21.3
     # via gmail-cli (pyproject.toml)
 pyparsing==3.3.2
     # via httplib2
