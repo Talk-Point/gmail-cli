@@ -18,7 +18,7 @@ google-api-core==2.30.0
     # via google-api-python-client
 google-api-python-client==2.193.0
     # via gmail-cli (pyproject.toml)
-google-auth==2.49.1
+google-auth==2.53.0
     # via
     #   google-api-core
     #   google-api-python-client
