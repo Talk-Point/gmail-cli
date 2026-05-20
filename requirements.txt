@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml -o requirements.txt --no-strip-extras
 annotated-doc==0.0.4
     # via typer
-certifi==2026.2.25
+certifi==2026.5.20
     # via requests
 cffi==2.0.0
     # via cryptography
