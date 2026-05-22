@@ -36,7 +36,7 @@ httplib2==0.31.2
     # via
     #   google-api-python-client
     #   google-auth-httplib2
-idna==3.11
+idna==3.16
     # via requests
 jaraco-classes==3.4.0
     # via keyring
