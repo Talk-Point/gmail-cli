@@ -99,7 +99,7 @@ secretstorage==3.5.0
     # via keyring
 shellingham==1.5.4
     # via typer
-typer==0.24.1
+typer==0.26.7
     # via gmail-cli (pyproject.toml)
 uritemplate==4.2.0
     # via google-api-python-client
