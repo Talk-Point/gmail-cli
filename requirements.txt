@@ -14,7 +14,7 @@ cryptography==46.0.5
     # via
     #   google-auth
     #   secretstorage
-google-api-core==2.30.0
+google-api-core==2.31.0
     # via google-api-python-client
 google-api-python-client==2.193.0
     # via gmail-cli (pyproject.toml)
