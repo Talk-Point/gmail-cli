@@ -30,7 +30,7 @@ dependencies = [
     "keyring>=24.0.0",
     "html2text>=2024.0.0",
     "markdown>=3.5.0",
-    "pymdown-extensions>=10.0",
+    "pymdown-extensions>=10.21.3",
 ]
 
 [project.optional-dependencies]
