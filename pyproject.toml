@@ -1,6 +1,6 @@
 [project]
 name = "gmail-cli"
-version = "0.15.135"
+version = "0.15.136"
 description = "A command-line interface for Gmail, similar to gh CLI"
 readme = "README.md"
 license = { text = "MIT" }
