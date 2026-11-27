@@ -658,8 +658,8 @@ name = "importlib-metadata"
 version = "10.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "lazy-importer", marker = "python_full_version < '3.14'" },
-    { name = "zipp", marker = "python_full_version < '3.14'" },
+    { name = "lazy-importer", marker = "python_full_version < '3.15'" },
+    { name = "zipp" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a6/91/0ef39e4ef4407de276289a3759977ac3a8cc546f59c55d725750eae3f41b/importlib_metadata-10.2.0.tar.gz", hash = "sha256:9413a2029fd9ca5669d27f1386071bbfe3c7ebca0545692ec975088241fe1d79", size = 72457 }
 wheels = [
@@ -749,11 +749,11 @@ wheels = [
 
 [[package]]
 name = "markdown"
-version = "3.11.3"
+version = "3.11.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ca/eb/dc0fd6eff604bfb870b7fb68b90985a32caaf3c76f67736bbf7f438acd59/markdown-3.11.3.tar.gz", hash = "sha256:81eb91631dc97ad1efbc76019ef0f80fe90ca49ddf81546752d79989c3bfff3e", size = 498810 }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/ff/8644daa33bfdf552c9cfec8d1fc2c690f57a347808f62c406ac6557329c2/markdown-3.11.4.tar.gz", hash = "sha256:c911a757f33d64a2578bed2d20c57e007b2aedd8a67bceabd593b31143d54ead", size = 505340 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/81/6f/1fa8970e960e5c832874399e6efa564870ade8206d57fef5d5e296b834f5/markdown-3.11.3-py3-none-any.whl", hash = "sha256:e1a31a112232504d753e5c01bb8c2de90d3f0ba986b063e10770cf7695b09e73", size = 116758 },
+    { url = "https://files.pythonhosted.org/packages/61/54/188fcc228c71a4ae33244008af08c2e7b1945b657390f56d82dfbe4059f0/markdown-3.11.4-py3-none-any.whl", hash = "sha256:2e30b19cead1968f391206e184ca67dfe6805c2eb8f383fb07b4dc90f8288075", size = 119551 },
 ]
 
 [[package]]
@@ -1298,7 +1298,7 @@ wheels = [
 
 [[package]]
 name = "typer"
-version = "0.29.2"
+version = "0.29.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
@@ -1307,9 +1307,9 @@ dependencies = [
     { name = "rich" },
     { name = "shellingham" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bf/21/37383ece7d0a4995fb8ea97729207c4292b3ff94085002f37b2387063cfb/typer-0.29.2.tar.gz", hash = "sha256:b1998dc5f2c3dedafa1517a9521fa944cc4dc1fadcea085d81a3b10ebcaeb075", size = 205728 }
+sdist = { url = "https://files.pythonhosted.org/packages/f4/8f/4583099c74623e04610d9df01ff58a9217935e88fdbd4b14167ebe99c134/typer-0.29.3.tar.gz", hash = "sha256:8189a53bb9684dc551e0b61e71904b323214884f2eb14bfe71aa859ae980d10a", size = 205982 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/f3/864dcb0e165b52e9f75aa3c7e0aeeb9876f139c66eb14d87856bb173b0fa/typer-0.29.2-py3-none-any.whl", hash = "sha256:f30731f8ca758368b836b3714872e58e395cef8fcaff918c853b1969ed5274e7", size = 121041 },
+    { url = "https://files.pythonhosted.org/packages/d9/43/a3e7ce867dc4fa852f4223ada99d29bc9ba5faf32496b63ec587cd10a0d7/typer-0.29.3-py3-none-any.whl", hash = "sha256:1fd37275046faecc86caa2e0e313978c10db71533fc0fe1a48f4e03a60efc23c", size = 121082 },
 ]
 
 [[package]]
